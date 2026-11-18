@@ -3,9 +3,10 @@ using Uludag.Core.Security;
 
 namespace ECommerce.Application.Features.Auth.Queries.GetMe
 {
-    // ISecuredRequest => AuthenticationBehavior, geçerli token yoksa handler'a hiç ulaşmadan 401 döndürür.
+    // Ek bir işaret gerekmez: IAllowAnonymousRequest olmadığı için AuthenticationBehavior,
+    // geçerli token yoksa handler'a hiç ulaşmadan 401 döndürür.
     // Bu sayede handler içinde "kullanıcı giriş yapmış mı?" kontrolü yazmaya gerek kalmaz.
-    public class GetMeQuery : IRequest<GetMeResponse>, ISecuredRequest
+    public class GetMeQuery : IRequest<GetMeResponse>
     {
         public class GetMeQueryHandler : IRequestHandler<GetMeQuery, GetMeResponse>
         {

@@ -7,7 +7,8 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
 {
     // IRequest<AccessToken> => başarılı girişte JWT döner.
     // E-posta/şifre hatalıysa AuthBusinessRules BusinessException fırlatır (400).
-    public class LoginCommand : IRequest<AccessToken>
+    // IAllowAnonymousRequest => token almak için çağrılır, dolayısıyla token istenemez.
+    public class LoginCommand : IRequest<AccessToken>, IAllowAnonymousRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;

@@ -7,7 +7,8 @@ using Uludag.Core.Security.Hashing;
 namespace ECommerce.Application.Features.Auth.Commands.Register
 {
     // IRequest<Guid> => kayıt olan kullanıcının Id'sini döndürür.
-    public class RegisterCommand : IRequest<Guid>
+    // IAllowAnonymousRequest => henüz hesabı olmayan kullanıcı çağırır, token istenemez.
+    public class RegisterCommand : IRequest<Guid>, IAllowAnonymousRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;

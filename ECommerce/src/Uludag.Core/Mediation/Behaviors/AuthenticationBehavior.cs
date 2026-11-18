@@ -3,7 +3,11 @@ using Uludag.Core.Security;
 
 namespace Uludag.Core.Mediation.Behaviors
 {
-    // Handler çalışmadan ÖNCE araya girer: istek ISecuredRequest ise kullanıcının oturum açmış olmasını şart koşar.
+    // Handler çalışmadan ÖNCE araya girer ve kullanıcının oturum açmış olmasını şart koşar.
+    //
+    // "Varsayılan olarak güvenli" (secure by default): TÜM istekler korunur.
+    // Herkese açık olması gereken istekler (Login, Register...) IAllowAnonymousRequest ile açıkça işaretlenir.
+    // Böylece yeni bir Command/Query eklenip işaretlemek unutulursa sonuç "herkese açık bir açık" değil, "401" olur.
     //
     // Token'ın kendisini (imza, süre, issuer, audience) burada doğrulamayız; o iş ASP.NET'in JwtBearer middleware'inindir
     // (Program.cs => AddJwtBearer + UseAuthentication). Middleware geçerli token gördüğünde HttpContext.User'ı doldurur,
@@ -23,8 +27,11 @@ namespace Uludag.Core.Mediation.Behaviors
 
         public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            // Korumasız istekler (Login, Register, ürün listeleme...) olduğu gibi devam eder.
-            if (request is ISecuredRequest && !_currentUser.IsAuthenticated)
+            // Anonim işaretli istekler kimlik doğrulama aşamasını atlar.
+            if (request is IAllowAnonymousRequest)
+                return next(cancellationToken);
+
+            if (!_currentUser.IsAuthenticated)
                 throw new UnauthorizedException();
 
             return next(cancellationToken);

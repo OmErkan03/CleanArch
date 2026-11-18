@@ -27,7 +27,7 @@ namespace ECommerce.WebAPI.Controllers
             return Ok(accessToken);
         }
 
-        // [Authorize] YOK: koruma GetMeQuery'nin ISecuredRequest olmasından gelir (AuthenticationBehavior).
+        // [Authorize] YOK: koruma AuthenticationBehavior'dan gelir (GetMeQuery IAllowAnonymousRequest değil).
         // Token yoksa / geçersizse => UnauthorizedException => 401.
         [HttpGet("me")]
         public async Task<IActionResult> Me(CancellationToken cancellationToken)

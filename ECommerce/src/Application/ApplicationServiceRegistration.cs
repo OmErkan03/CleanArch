@@ -17,7 +17,7 @@ namespace ECommerce.Application
             var descriptors = MediatorRegistrar.CreateDescriptors(cfg => cfg
                 .RegisterServicesFromAssemblyContaining<AssemblyReference>()
                 .AddBehavior(typeof(LoggingBehavior<,>))
-                // ISecuredRequest işaretli istekleri oturum açılmamışsa handler'a ulaşmadan durdurur.
+                // Oturum açılmamışsa tüm istekleri handler'a ulaşmadan durdurur (IAllowAnonymousRequest hariç).
                 .AddBehavior(typeof(AuthenticationBehavior<,>)));
 
             foreach (var descriptor in descriptors)
