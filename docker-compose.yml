@@ -1,0 +1,29 @@
+# Geliştirme ortamı için PostgreSQL
+# Başlatmak : docker compose up -d
+# Durdurmak : docker compose down        (veriler volume'da kalır)
+# Sıfırlamak: docker compose down -v     (veriler de silinir)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: uludag-postgres
+    restart: unless-stopped
+    environment:
+      # Değerler .env dosyasından okunur; yoksa ":-" sonrasındaki varsayılan kullanılır.
+      POSTGRES_DB: ${POSTGRES_DB:-UludagECommerce}
+      POSTGRES_USER: ${POSTGRES_USER:-uludag}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uludag123}
+    ports:
+      # host:container => Bilgisayarda kurulu PostgreSQL 5432'yi kullandığı için dışarıya 5433 açılır.
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # Container silinse bile veriler bu volume'da kalır.
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

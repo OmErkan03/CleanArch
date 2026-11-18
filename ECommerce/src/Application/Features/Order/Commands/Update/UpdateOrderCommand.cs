@@ -1,0 +1,37 @@
+using ECommerce.Application.Features.Order.Rules;
+using ECommerce.Application.Services.Repositories;
+using Uludag.Core.Mediation;
+
+namespace ECommerce.Application.Features.Order.Commands.Update
+{
+    // IRequest => geriye değer döndürmez. Sipariş bulunamazsa OrderBusinessRules NotFoundException fırlatır (404).
+    // Yalnızca sipariş tarihi güncellenebilir: toplam tutar kalemlerden hesaplanır,
+    // para birimi de mevcut kalemlerle uyumsuz hale gelmesin diye değiştirilemez.
+    public class UpdateOrderCommand : IRequest
+    {
+        public Guid Id { get; set; }
+        public DateTime OrderDate { get; set; }
+
+        public class UpdateOrderCommandHandler : IRequestHandler<UpdateOrderCommand>
+        {
+            private readonly IOrderRepository _orderRepository;
+            private readonly OrderBusinessRules _orderBusinessRules;
+            public UpdateOrderCommandHandler(IOrderRepository orderRepository, OrderBusinessRules orderBusinessRules)
+            {
+                _orderRepository = orderRepository;
+                _orderBusinessRules = orderBusinessRules;
+            }
+
+            public async Task Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
+            {
+                var order = await _orderRepository.GetByIdAsync(request.Id, tracking: true, cancellationToken);
+                await _orderBusinessRules.OrderShouldExistWhenSelected(order);
+
+                // PostgreSQL (timestamptz) UTC zaman bekler; "Z" olmadan gelen tarih yerel saat kabul edilip UTC'ye çevrilir.
+                order.OrderDate = request.OrderDate.ToUniversalTime();
+
+                await _orderRepository.SaveChangesAsync(cancellationToken);
+            }
+        }
+    }
+}
