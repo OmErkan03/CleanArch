@@ -10,7 +10,6 @@ namespace ECommerce.Persistence.Contexts
     {
         public UludagDbContext(DbContextOptions options) : base(options)
         {
-
         }
         protected UludagDbContext()
         {
@@ -20,6 +19,7 @@ namespace ECommerce.Persistence.Contexts
         public DbSet<Product> Products => Set<Product>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        public DbSet<User> Users => Set<User>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

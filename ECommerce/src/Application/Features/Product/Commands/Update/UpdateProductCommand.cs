@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.ValueObjects;
+﻿using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -32,10 +32,7 @@ namespace ECommerce.Application.Features.Product.Commands.Update
 
                 // Bulunan nesne EF tarafından takip edilir; alanlarını değiştirmek yeterli,
                 // SaveChanges yalnızca değişen kolonlar için UPDATE üretir.
-                product.Name = request.Name;
-                product.Stock = request.Stock;
-                // Money bir Value Object: alanları tek tek değiştirilmez, yenisi oluşturulur.
-                product.Price = new Money(request.Amount, request.Currency);
+                ProductMapper.MapUpdateCommandToProduct(request, product);
 
                 await _productRepository.SaveChangesAsync(cancellationToken);
             }

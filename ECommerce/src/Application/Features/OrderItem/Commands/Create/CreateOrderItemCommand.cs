@@ -1,5 +1,5 @@
-using ECommerce.Domain.ValueObjects;
 using ECommerce.Application.Features.Order.Rules;
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
@@ -53,14 +53,7 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
 
                 await _orderItemBusinessRules.ProductCurrencyShouldMatchOrderCurrency(product, order);
 
-                Domain.Entities.OrderItem orderItem = new()
-                {
-                    OrderId = order.Id,
-                    ProductId = product.Id,
-                    Quantity = request.Quantity,
-                    // Negatif adet => negatif tutar => Money hata fırlatır.
-                    TotalPrice = new Money(product.Price.Amount * request.Quantity, product.Price.Currency)
-                };
+                var orderItem = OrderItemMapper.MapCreateCommandToOrderItem(request, product);
 
                 // EF, takip edilen siparişin Items koleksiyonuna yeni kalemi otomatik ekler (navigation fixup).
                 await _orderItemRepository.AddAsync(orderItem, cancellationToken);

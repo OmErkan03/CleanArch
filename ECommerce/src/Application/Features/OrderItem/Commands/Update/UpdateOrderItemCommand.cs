@@ -1,5 +1,5 @@
-using ECommerce.Domain.ValueObjects;
 using ECommerce.Application.Features.Order.Rules;
+using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
@@ -55,9 +55,7 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
 
                 await _orderItemBusinessRules.ProductCurrencyShouldMatchOrderCurrency(product, order);
 
-                orderItem.ProductId = product.Id;
-                orderItem.Quantity = request.Quantity;
-                orderItem.TotalPrice = new Money(product.Price.Amount * request.Quantity, product.Price.Currency);
+                OrderItemMapper.MapUpdateCommandToOrderItem(request, orderItem, product);
 
                 order.RecalculateTotalPrice();
 

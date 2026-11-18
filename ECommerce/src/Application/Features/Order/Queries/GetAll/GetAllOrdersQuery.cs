@@ -19,7 +19,7 @@ namespace ECommerce.Application.Features.Order.Queries.GetAll
             {
                 var orders = await _orderRepository.GetAllAsync(cancellationToken);
 
-                return orders.Select(o => o.ToResponse()).ToList();
+                return orders.ToResponseList();
             }
         }
     }

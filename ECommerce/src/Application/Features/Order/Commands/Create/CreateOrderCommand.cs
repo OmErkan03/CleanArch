@@ -1,4 +1,4 @@
-using ECommerce.Domain.ValueObjects;
+using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 
@@ -21,14 +21,7 @@ namespace ECommerce.Application.Features.Order.Commands.Create
 
             public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
             {
-                Domain.Entities.Order order = new()
-                {
-                    // Sipariş tarihi istemciden alınmaz, sunucu belirler.
-                    // PostgreSQL (timestamptz) UTC zaman bekler.
-                    OrderDate = DateTime.UtcNow,
-                    // Henüz kalem yok => toplam 0.
-                    TotalPrice = new Money(0, request.Currency)
-                };
+                var order = OrderMapper.MapCreateCommandToOrder(request);
 
                 await _orderRepository.AddAsync(order, cancellationToken);
                 await _orderRepository.SaveChangesAsync(cancellationToken);

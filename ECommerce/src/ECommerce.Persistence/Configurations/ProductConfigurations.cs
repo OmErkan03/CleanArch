@@ -8,6 +8,9 @@ namespace ECommerce.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<Product> builder)
         {
+            // NOT: Seed data burada HasData ile verilmez; Price bir ComplexProperty olduğu için
+            // EF Core HasData ile seed edilmesini desteklemiyor (efcore#31254).
+            // Seed işlemi DbContext options'taki UseSeeding/UseAsyncSeeding ile yapılır (bkz. Seeds/ProductSeed.cs).
             builder.ToTable("Products");
 
             builder.HasKey(p => p.Id);
