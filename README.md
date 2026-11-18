@@ -1,1 +1,1 @@
-# UludagEnerji
+# Clean Arch.
