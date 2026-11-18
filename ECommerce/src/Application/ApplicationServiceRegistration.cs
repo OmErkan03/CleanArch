@@ -16,7 +16,9 @@ namespace ECommerce.Application
             // Mediator: bu assembly'deki tüm handler'ları tarar, IMediator/ISender/IPublisher'ı kaydeder.
             var descriptors = MediatorRegistrar.CreateDescriptors(cfg => cfg
                 .RegisterServicesFromAssemblyContaining<AssemblyReference>()
-                .AddBehavior(typeof(LoggingBehavior<,>)));
+                .AddBehavior(typeof(LoggingBehavior<,>))
+                // ISecuredRequest işaretli istekleri oturum açılmamışsa handler'a ulaşmadan durdurur.
+                .AddBehavior(typeof(AuthenticationBehavior<,>)));
 
             foreach (var descriptor in descriptors)
             {
