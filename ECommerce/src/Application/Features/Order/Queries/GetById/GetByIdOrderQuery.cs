@@ -2,13 +2,17 @@ using ECommerce.Application.Features.Order.Dtos;
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Queries.GetById
 {
     // Sipariş bulunamazsa OrderBusinessRules NotFoundException fırlatır (404).
-    public class GetByIdOrderQuery : IRequest<OrderResponse>
+    public class GetByIdOrderQuery : IRequest<OrderResponse>, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Read];
+
         public Guid Id { get; set; }
 
         public class GetByIdOrderQueryHandler : IRequestHandler<GetByIdOrderQuery, OrderResponse>

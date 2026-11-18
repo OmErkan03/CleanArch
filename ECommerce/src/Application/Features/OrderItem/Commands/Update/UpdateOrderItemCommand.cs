@@ -3,6 +3,7 @@ using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.OrderItem.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Update
@@ -11,8 +12,11 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Update
     // Kalem, ürün veya sipariş bulunamazsa NotFoundException (404), para birimi uyuşmazsa BusinessException (400) fırlatılır.
     // Kalemin siparişi (OrderId) değiştirilemez; ürün ve adet değiştirilebilir.
     // TODO: Stok farkı henüz yansıtılmıyor (bilinen risk, ileride eklenecek).
-    public class UpdateOrderItemCommand : IRequest
+    public class UpdateOrderItemCommand : IRequest, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [OrderItemOperationClaims.Admin, OrderItemOperationClaims.Write, OrderItemOperationClaims.Update];
+
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }

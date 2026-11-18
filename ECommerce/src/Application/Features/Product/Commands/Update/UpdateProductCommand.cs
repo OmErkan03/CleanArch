@@ -1,13 +1,17 @@
 ﻿using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Product.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Commands.Update
 {
     // IRequest => geriye değer döndürmez. Ürün bulunamazsa ProductBusinessRules NotFoundException fırlatır (404).
-    public class UpdateProductCommand : IRequest
+    public class UpdateProductCommand : IRequest, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Write, ProductOperationClaims.Update];
+
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Amount { get; set; }
