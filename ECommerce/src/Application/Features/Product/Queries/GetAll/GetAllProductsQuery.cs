@@ -22,7 +22,7 @@ namespace ECommerce.Application.Features.Product.Queries.GetAll
                 // Repository okuma işlemini AsNoTracking ile yapar (Query'lerde takip gereksizdir).
                 var products = await _productRepository.GetAllAsync(cancellationToken);
 
-                return products.Select(p => p.ToResponse()).ToList();
+                return products.ToResponseList();
             }
         }
     }

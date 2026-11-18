@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Order\Locales\" />
     <Folder Include="Features\Product\Mappers\" />
     <Folder Include="Features\Product\Queries\GetAll\" />
     <Folder Include="Features\Product\Queries\GetById\" />

@@ -2,6 +2,7 @@
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 using ECommerce.Application.Features.Product.Rules;
+using ECommerce.Application.Features.Product.Mappers;
 
 namespace ECommerce.Application.Features.Product.Commands.Create
 {
@@ -29,15 +30,18 @@ namespace ECommerce.Application.Features.Product.Commands.Create
                 _productRepository = productRepository;
                 this.productBusinessRules = productBusinessRules;
             }
+            // Orchestrator gibi davranır.
+            // Doğru sırayla, doğru kişileri çağırır. (BusinessRules, Repository)
+            // İş kuralı
             public async Task<Guid> Handle(CreateProductCommand request, CancellationToken cancellationToken)
             {
                 await productBusinessRules.ProductNameCannotExist(request.Name);
-                Domain.Entities.Product product = new()
-                {
-                    Name = request.Name,
-                    Price = new Money(request.Amount, request.Currency),
-                    Stock = request.Stock
-                };
+                
+                // İşi kendisi yapıyor.
+                // Mapper => gibi davrandı.
+
+                var product = ProductMapper.MapCreateCommandToProduct(request);
+
                 // AddAsync sırasında EF, Guid tipindeki Id'yi otomatik üretir.
                 await _productRepository.AddAsync(product, cancellationToken);
                 await _productRepository.SaveChangesAsync(cancellationToken);

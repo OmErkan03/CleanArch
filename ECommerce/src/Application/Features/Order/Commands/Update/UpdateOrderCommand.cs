@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Features.Order.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
@@ -27,8 +28,7 @@ namespace ECommerce.Application.Features.Order.Commands.Update
                 var order = await _orderRepository.GetByIdAsync(request.Id, tracking: true, cancellationToken);
                 await _orderBusinessRules.OrderShouldExistWhenSelected(order);
 
-                // PostgreSQL (timestamptz) UTC zaman bekler; "Z" olmadan gelen tarih yerel saat kabul edilip UTC'ye çevrilir.
-                order.OrderDate = request.OrderDate.ToUniversalTime();
+                OrderMapper.MapUpdateCommandToOrder(request, order);
 
                 await _orderRepository.SaveChangesAsync(cancellationToken);
             }
