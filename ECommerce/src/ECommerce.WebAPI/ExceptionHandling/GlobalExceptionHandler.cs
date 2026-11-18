@@ -15,6 +15,7 @@ namespace ECommerce.WebAPI.ExceptionHandling
             var (statusCode, title) = exception switch
             {
                 UnauthorizedException => (StatusCodes.Status401Unauthorized, "Yetkisiz erişim"),
+                ForbiddenException => (StatusCodes.Status403Forbidden, "Erişim engellendi"),
                 NotFoundException => (StatusCodes.Status404NotFound, "Kayıt bulunamadı"),
                 BusinessException => (StatusCodes.Status400BadRequest, "İş kuralı ihlali"),
                 _ => (StatusCodes.Status500InternalServerError, "Beklenmeyen bir hata oluştu")

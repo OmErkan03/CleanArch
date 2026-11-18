@@ -33,8 +33,11 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
 
                 await _authBusinessRules.PasswordShouldMatch(user, request.Password);
 
+                // Kullanıcının yetkileri token'a yazılır; AuthorizationBehavior her istekte DB'ye gitmeden bunları kontrol eder.
+                var operationClaims = await _userRepository.GetOperationClaimNamesAsync(user.Id, cancellationToken);
+
                 // Kimlik doğrulandı => kullanıcı bilgilerini taşıyan, imzalı bir token üretilir.
-                return _tokenHelper.CreateToken(user.Id, user.Email);
+                return _tokenHelper.CreateToken(user.Id, user.Email, operationClaims);
             }
         }
     }

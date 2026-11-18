@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Uludag.Core.Security;
+using Uludag.Core.Security.Constants;
 
 namespace ECommerce.WebAPI.Security
 {
@@ -16,5 +17,8 @@ namespace ECommerce.WebAPI.Security
             Guid.TryParse(User?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var id) ? id : null;
 
         public string? Email => User?.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+        public IReadOnlyCollection<string> OperationClaims =>
+            User?.FindAll(SecurityClaimTypes.OperationClaim).Select(c => c.Value).ToArray() ?? [];
     }
 }

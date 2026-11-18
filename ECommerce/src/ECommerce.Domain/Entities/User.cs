@@ -10,5 +10,8 @@ namespace ECommerce.Domain.Entities
         public string Email { get; set; }
         public byte[] PasswordHash { get; set; }
         public byte[] PasswordSalt { get; set; }
+
+        // Kullanıcının sahip olduğu yetkiler (çoka-çok, ara tablo: UserOperationClaims).
+        public ICollection<OperationClaim> OperationClaims { get; set; } = [];
     }
 }

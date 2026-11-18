@@ -18,7 +18,9 @@ namespace ECommerce.Application
                 .RegisterServicesFromAssemblyContaining<AssemblyReference>()
                 .AddBehavior(typeof(LoggingBehavior<,>))
                 // Oturum açılmamışsa tüm istekleri handler'a ulaşmadan durdurur (IAllowAnonymousRequest hariç).
-                .AddBehavior(typeof(AuthenticationBehavior<,>)));
+                .AddBehavior(typeof(AuthenticationBehavior<,>))
+                // Kimliği doğrulanan kullanıcının, ISecuredRequest.Roles'daki claim'lerden birine sahip olmasını şart koşar (403).
+                .AddBehavior(typeof(AuthorizationBehavior<,>)));
 
             foreach (var descriptor in descriptors)
             {

@@ -5,6 +5,7 @@ using ECommerce.WebAPI.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Uludag.Core.Security;
+using Uludag.Core.Security.Constants;
 using Uludag.Core.Security.JWT;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,8 @@ builder.Services
         options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
+            // Operation claim'ler token'da "role" adıyla taşınır (bkz. JwtHelper).
+            RoleClaimType = SecurityClaimTypes.OperationClaim,
             ValidateIssuer = true,
             ValidIssuer = tokenOptions.Issuer,
             ValidateAudience = true,

@@ -7,5 +7,8 @@ namespace Uludag.Core.Security
         bool IsAuthenticated { get; }
         Guid? UserId { get; }
         string? Email { get; }
+
+        // Token'daki operation claim adları (ör. "Product.Read"). Oturum açılmamışsa boştur.
+        IReadOnlyCollection<string> OperationClaims { get; }
     }
 }

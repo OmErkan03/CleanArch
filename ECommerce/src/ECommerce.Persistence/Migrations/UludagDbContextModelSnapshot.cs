@@ -23,6 +23,121 @@ namespace ECommerce.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ECommerce.Domain.Entities.OperationClaim", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("OperationClaims", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Product.Admin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Product.Read"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Product.Write"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Product.Create"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Product.Update"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Product.Delete"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Order.Admin"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "Order.Read"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "Order.Write"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "Order.Create"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "Order.Update"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Name = "Order.Delete"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Name = "OrderItem.Admin"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Name = "OrderItem.Read"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Name = "OrderItem.Write"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Name = "OrderItem.Create"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Name = "OrderItem.Update"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Name = "OrderItem.Delete"
+                        });
+                });
+
             modelBuilder.Entity("ECommerce.Domain.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -150,6 +265,21 @@ namespace ECommerce.Persistence.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("UserOperationClaims", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OperationClaimId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "OperationClaimId");
+
+                    b.HasIndex("OperationClaimId");
+
+                    b.ToTable("UserOperationClaims");
+                });
+
             modelBuilder.Entity("ECommerce.Domain.Entities.OrderItem", b =>
                 {
                     b.HasOne("ECommerce.Domain.Entities.Order", "Order")
@@ -167,6 +297,21 @@ namespace ECommerce.Persistence.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("UserOperationClaims", b =>
+                {
+                    b.HasOne("ECommerce.Domain.Entities.OperationClaim", null)
+                        .WithMany()
+                        .HasForeignKey("OperationClaimId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ECommerce.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ECommerce.Domain.Entities.Order", b =>

@@ -3,6 +3,7 @@ using ECommerce.Application.Features.OrderItem.Mappers;
 using ECommerce.Application.Features.OrderItem.Rules;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.OrderItem.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.OrderItem.Commands.Create
@@ -11,8 +12,11 @@ namespace ECommerce.Application.Features.OrderItem.Commands.Create
     // Sipariş veya ürün bulunamazsa NotFoundException (404), para birimi uyuşmazsa BusinessException (400) fırlatılır.
     // Tutar istemciden alınmaz: ürünün güncel fiyatı * adet olarak hesaplanır.
     // TODO: Stok düşümü henüz yapılmıyor (bilinen risk, ileride eklenecek).
-    public class CreateOrderItemCommand : IRequest<Guid>
+    public class CreateOrderItemCommand : IRequest<Guid>, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [OrderItemOperationClaims.Admin, OrderItemOperationClaims.Write, OrderItemOperationClaims.Create];
+
         public Guid OrderId { get; set; }
         public Guid ProductId { get; set; }
         public int Quantity { get; set; }

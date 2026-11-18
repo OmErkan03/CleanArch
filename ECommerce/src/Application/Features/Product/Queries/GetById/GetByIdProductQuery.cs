@@ -2,13 +2,17 @@ using ECommerce.Application.Features.Product.Dtos;
 using ECommerce.Application.Features.Product.Mappers;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Product.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Product.Queries.GetById
 {
     // Ürün bulunamazsa ProductBusinessRules NotFoundException fırlatır (404).
-    public class GetByIdProductQuery : IRequest<ProductResponse>
+    public class GetByIdProductQuery : IRequest<ProductResponse>, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Read];
+
         public Guid Id { get; set; }
 
         public class GetByIdProductQueryHandler : IRequestHandler<GetByIdProductQuery, ProductResponse>

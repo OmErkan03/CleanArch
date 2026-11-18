@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Uludag.Core.Security.Constants;
 
 namespace Uludag.Core.Security.JWT
 {
@@ -20,8 +21,19 @@ namespace Uludag.Core.Security.JWT
                 SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey));
         }
 
-        public AccessToken CreateToken(Guid userId, string email)
+        public AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims)
         {
+            List<Claim> claims =
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                // jti: token'a özgü benzersiz Id (ileride iptal/blacklist için kullanılabilir)
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            ];
+
+            // Her operation claim ayrı bir "role" claim'i olur; AuthorizationBehavior bunları metinsel karşılaştırır.
+            claims.AddRange(operationClaims.Select(name => new Claim(SecurityClaimTypes.OperationClaim, name)));
+
             var now = DateTime.UtcNow;
             var expiration = now.AddMinutes(_tokenOptions.AccessTokenExpirationMinutes);
 
@@ -34,13 +46,7 @@ namespace Uludag.Core.Security.JWT
                 Expires = expiration,
                 SigningCredentials = _signingCredentials,
                 // Claim = token'ın taşıdığı kullanıcı bilgisi. İstek geldiğinde ICurrentUser bunları okur.
-                Subject = new ClaimsIdentity(
-                [
-                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, email),
-                    // jti: token'a özgü benzersiz Id (ileride iptal/blacklist için kullanılabilir)
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                ])
+                Subject = new ClaimsIdentity(claims)
             };
 
             return new AccessToken

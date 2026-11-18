@@ -1,13 +1,17 @@
 using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
 
 namespace ECommerce.Application.Features.Order.Commands.Create
 {
     // IRequest<Guid> => oluşturulan siparişin Id'sini döndürür.
     // Sipariş boş oluşturulur; kalemler OrderItem endpoint'i ile eklenir ve toplam tutar otomatik hesaplanır.
-    public class CreateOrderCommand : IRequest<Guid>
+    public class CreateOrderCommand : IRequest<Guid>, ISecuredRequest
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [OrderOperationClaims.Admin, OrderOperationClaims.Write, OrderOperationClaims.Create];
+
         // Siparişin para birimi. Siparişe eklenen tüm ürünler bu para biriminde olmalıdır.
         public string Currency { get; set; } = "TRY";
 

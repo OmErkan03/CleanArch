@@ -1,5 +1,6 @@
 ﻿using ECommerce.Domain.ValueObjects;
 using ECommerce.Application.Services.Repositories;
+using ECommerce.Application.Features.Product.Constants;
 using Uludag.Core.Mediation;
 using ECommerce.Application.Features.Product.Rules;
 using ECommerce.Application.Features.Product.Mappers;
@@ -8,8 +9,11 @@ namespace ECommerce.Application.Features.Product.Commands.Create
 {
     // IRequest<Guid> => bu bir istektir ve geriye oluşturulan ürünün Id'sini döndürür.
     // (Id dönmezse, istemci oluşturduğu ürünü güncellemek/silmek için Id'yi bilemez.)
-    public class CreateProductCommand : IRequest<Guid> // Komut varolmadan
+    public class CreateProductCommand : IRequest<Guid>, ISecuredRequest // Komut varolmadan
     {
+        // Bu işlemi yapabilmek için kullanıcı aşağıdaki claim'lerden EN AZ BİRİNE sahip olmalıdır (bkz. AuthorizationBehavior).
+        public string[] Roles => [ProductOperationClaims.Admin, ProductOperationClaims.Write, ProductOperationClaims.Create];
+
         // İki parçadan oluşur => Komutun Gövdesi, (Create işlemi yapılırken ne istiyorsun?)
         public string Name { get; set; } = string.Empty;
         public decimal Amount { get; set; }

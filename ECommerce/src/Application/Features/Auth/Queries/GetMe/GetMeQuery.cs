@@ -23,7 +23,8 @@ namespace ECommerce.Application.Features.Auth.Queries.GetMe
                 return Task.FromResult(new GetMeResponse
                 {
                     Id = _currentUser.UserId!.Value,
-                    Email = _currentUser.Email!
+                    Email = _currentUser.Email!,
+                    OperationClaims = _currentUser.OperationClaims.ToList()
                 });
             }
         }
@@ -33,5 +34,6 @@ namespace ECommerce.Application.Features.Auth.Queries.GetMe
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
+        public List<string> OperationClaims { get; set; } = [];
     }
 }
