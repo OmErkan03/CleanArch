@@ -20,6 +20,13 @@ namespace ECommerce.Persistence.Repositories
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
+        public async Task<User?> GetByIdWithOperationClaimsAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .Include(u => u.OperationClaims)
+                .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        }
+
         public async Task<List<string>> GetOperationClaimNamesAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             // Ara tablo (UserOperationClaims) üzerinden JOIN; yalnızca claim adları çekilir.
