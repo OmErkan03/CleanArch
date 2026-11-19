@@ -8,6 +8,7 @@ using Uludag.Core.Caching.Redis;
 using Uludag.Core.Security;
 using Uludag.Core.Security.Constants;
 using Uludag.Core.Security.JWT;
+using Uludag.Core.Security.MultiFactor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,10 @@ builder.Services
 // ---------- Redis ----------
 // Oturumlar (UserSession) Redis'te tutulur. ICacheService ve ISessionStore'u kaydeder.
 builder.Services.AddRedisCache(builder.Configuration);
+
+// ---------- MFA ----------
+// TOTP (authenticator uygulaması) ile ikinci faktör. Yarım kalan girişler (MFA challenge) Redis'te tutulur.
+builder.Services.AddMultiFactorAuthentication(builder.Configuration);
 
 // AuthenticationBehavior isteği yapan kullanıcıyı ICurrentUser üzerinden öğrenir.
 builder.Services.AddHttpContextAccessor();

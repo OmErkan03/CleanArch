@@ -20,6 +20,11 @@ namespace ECommerce.Persistence.Repositories
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
+        public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        }
+
         public async Task<User?> GetByIdWithOperationClaimsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.Users

@@ -8,6 +8,9 @@ namespace ECommerce.Application.Services.Repositories
     {
         Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
+        // Değişiklik takibi açık döner (ör. MFA kurulumunda kullanıcı güncellenir).
+        Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
         // Kullanıcıyı yetkileriyle (OperationClaims) birlikte, değişiklik takibi AÇIK olarak getirir.
         // Yetki ekleme/çıkarma (ara tabloya INSERT/DELETE) için koleksiyonun yüklenmiş ve takip ediliyor olması gerekir.
         Task<User?> GetByIdWithOperationClaimsAsync(Guid userId, CancellationToken cancellationToken = default);

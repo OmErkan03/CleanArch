@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ECommerce.Application.Features.Auth.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Uludag.Core.Mediation.Behaviors;
 using Uludag.Core.Mediation.Registration;
 
@@ -38,6 +39,9 @@ namespace ECommerce.Application
             {
                 services.AddScoped(type, type);
             }
+
+            // Şifre + MFA doğrulanmış kullanıcı için Redis oturumu açıp JWT üretir (MFA komutları kullanır).
+            services.AddScoped<AccessTokenService>();
 
             // İleride Application'a ait diğer kayıtlar da buraya eklenir (mapper, validator vb.)
 
