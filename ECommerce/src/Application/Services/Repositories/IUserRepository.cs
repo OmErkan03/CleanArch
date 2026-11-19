@@ -8,7 +8,11 @@ namespace ECommerce.Application.Services.Repositories
     {
         Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
-        // Kullanıcının sahip olduğu operation claim adları (ör. "Product.Read"). Login'de token'a yazılır.
+        // Kullanıcıyı yetkileriyle (OperationClaims) birlikte, değişiklik takibi AÇIK olarak getirir.
+        // Yetki ekleme/çıkarma (ara tabloya INSERT/DELETE) için koleksiyonun yüklenmiş ve takip ediliyor olması gerekir.
+        Task<User?> GetByIdWithOperationClaimsAsync(Guid userId, CancellationToken cancellationToken = default);
+
+        // Kullanıcının sahip olduğu operation claim adları (ör. "Product.Read"). Redis'teki oturuma yazılır.
         Task<List<string>> GetOperationClaimNamesAsync(Guid userId, CancellationToken cancellationToken = default);
 
         Task AddAsync(User user, CancellationToken cancellationToken = default);
