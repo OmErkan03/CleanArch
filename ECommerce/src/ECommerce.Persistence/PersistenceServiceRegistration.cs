@@ -5,6 +5,7 @@ using ECommerce.Persistence.Seeds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Uludag.Core.Security.Ownership;
 
 namespace ECommerce.Persistence
 {
@@ -16,6 +17,10 @@ namespace ECommerce.Persistence
             // Connection string appsettings.json / appsettings.Development.json'daki "ConnectionStrings:PostgreSQL" alanından okunur.
             var connectionString = configuration.GetConnectionString("PostgreSQL")
                 ?? throw new InvalidOperationException("'ConnectionStrings:PostgreSQL' ayarı bulunamadı.");
+
+            // IDOR koruması: DbContext, kayıtlara kim adına erişildiğini buradan öğrenir (bkz. UludagDbContext.Ownership.cs).
+            // ICurrentUser'a bağlıdır; ICurrentUser WebAPI katmanında kaydedilir.
+            services.AddScoped<IDataOwnershipContext, DataOwnershipContext>();
 
             services.AddDbContext<UludagDbContext>(options => options
                 // UseNpgsql => EF Core'a veritabanının PostgreSQL olduğunu söyler.
