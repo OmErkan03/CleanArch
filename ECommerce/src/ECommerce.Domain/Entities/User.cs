@@ -19,5 +19,8 @@ namespace ECommerce.Domain.Entities
 
         // Kullanıcının sahip olduğu yetkiler (çoka-çok, ara tablo: UserOperationClaims).
         public ICollection<OperationClaim> OperationClaims { get; set; } = [];
+
+        // Kullanıcının siparişleri (1 User => N Order).
+        public virtual ICollection<Order> Orders { get; set; } = [];
     }
 }

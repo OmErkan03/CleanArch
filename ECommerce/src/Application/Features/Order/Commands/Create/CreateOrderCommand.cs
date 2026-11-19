@@ -2,10 +2,12 @@ using ECommerce.Application.Features.Order.Mappers;
 using ECommerce.Application.Services.Repositories;
 using ECommerce.Application.Features.Order.Constants;
 using Uludag.Core.Mediation;
+using Uludag.Core.Security;
 
 namespace ECommerce.Application.Features.Order.Commands.Create
 {
     // IRequest<Guid> => oluşturulan siparişin Id'sini döndürür.
+    // Sipariş, isteği yapan (oturum açmış) kullanıcıya ait olarak oluşturulur.
     // Sipariş boş oluşturulur; kalemler OrderItem endpoint'i ile eklenir ve toplam tutar otomatik hesaplanır.
     public class CreateOrderCommand : IRequest<Guid>, ISecuredRequest
     {
@@ -18,14 +20,17 @@ namespace ECommerce.Application.Features.Order.Commands.Create
         public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Guid>
         {
             private readonly IOrderRepository _orderRepository;
-            public CreateOrderCommandHandler(IOrderRepository orderRepository)
+            private readonly ICurrentUser _currentUser;
+            public CreateOrderCommandHandler(IOrderRepository orderRepository, ICurrentUser currentUser)
             {
                 _orderRepository = orderRepository;
+                _currentUser = currentUser;
             }
 
             public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
             {
-                var order = OrderMapper.MapCreateCommandToOrder(request);
+                // ISecuredRequest olduğu için kimliği doğrulanmamış istek buraya ulaşmaz; UserId her zaman doludur.
+                var order = OrderMapper.MapCreateCommandToOrder(request, _currentUser.UserId!.Value);
 
                 await _orderRepository.AddAsync(order, cancellationToken);
                 await _orderRepository.SaveChangesAsync(cancellationToken);
