@@ -61,3 +61,13 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# ANEW (merged from .gitattributes.anew at bootstrap): POSIX scripts must stay
+# LF or `sh` fails on the carriage return; Windows batch files need CRLF.
+# The repo-wide `* text=auto` above is kept (adoption: not changed to eol=lf).
+###############################################################################
+scripts/* text eol=lf
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
