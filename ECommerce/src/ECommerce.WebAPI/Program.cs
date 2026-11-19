@@ -1,10 +1,13 @@
 using ECommerce.Application;
 using ECommerce.Persistence;
+using ECommerce.WebAPI.Configuration;
 using ECommerce.WebAPI.ExceptionHandling;
+using ECommerce.WebAPI.RateLimiting;
 using ECommerce.WebAPI.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Uludag.Core.Caching.Redis;
+using Uludag.Core.RateLimiting;
 using Uludag.Core.Security;
 using Uludag.Core.Security.Constants;
 using Uludag.Core.Security.JWT;
@@ -61,6 +64,13 @@ builder.Services.AddRedisCache(builder.Configuration);
 // TOTP (authenticator uygulaması) ile ikinci faktör. Yarım kalan girişler (MFA challenge) Redis'te tutulur.
 builder.Services.AddMultiFactorAuthentication(builder.Configuration);
 
+// ---------- Rate limiting ----------
+// Leaky bucket: kullanıcı (yoksa IP) başına kapasite 10, her 12 sn'de 1 damla. Kovalar Redis'te tutulur.
+builder.Services.AddLeakyBucketRateLimiting(builder.Configuration);
+
+// Reverse proxy arkasında gerçek istemci IP'si (X-Forwarded-For). Varsayılan: kapalı (bkz. ReverseProxyOptions).
+builder.Services.AddReverseProxySupport(builder.Configuration);
+
 // AuthenticationBehavior isteği yapan kullanıcıyı ICurrentUser üzerinden öğrenir.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
@@ -87,6 +97,9 @@ var app = builder.Build();
 // Pipeline'ın en başında olmalı ki sonraki tüm katmanlarda fırlatılan exception'ları yakalayabilsin.
 app.UseExceptionHandler();
 
+// İstemci IP'sini okuyan her şeyden önce: güvenilen proxy'den gelen X-Forwarded-For'u RemoteIpAddress'e yazar (açıksa).
+app.UseReverseProxySupport();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -104,6 +117,11 @@ app.UseHttpsRedirection();
 
 // Token'ı doğrulayıp HttpContext.User'ı dolduran middleware. UseAuthorization'dan ÖNCE olmalı.
 app.UseAuthentication();
+
+// Authentication'dan SONRA: kova, oturum açmış kullanıcıya göre (yoksa IP'ye göre) seçilir.
+// Controller'lardan ÖNCE: sınırı aşan istek hiçbir iş yapılmadan 429 ile döner.
+app.UseLeakyBucketRateLimiting();
+
 app.UseAuthorization();
 
 app.MapControllers();
