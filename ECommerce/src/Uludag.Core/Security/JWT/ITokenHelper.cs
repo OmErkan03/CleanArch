@@ -1,9 +1,11 @@
 namespace Uludag.Core.Security.JWT
 {
-    // Core katmanı Domain'i (User entity'sini) tanımaz; bu yüzden token üretmek için gereken bilgiler ayrı ayrı verilir.
+    // Token yalnızca Redis'teki oturumun anahtarını taşır (bkz. ISessionStore).
+    // Kullanıcı bilgileri (email, yetkiler) token'da değil, Redis'teki oturum kaydında durur.
     // Application katmanı bu arayüze bağımlıdır, JWT'nin nasıl üretildiğini bilmez.
     public interface ITokenHelper
     {
-        AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims);
+        // expiration: oturumun Redis'teki bitiş zamanıyla aynı olmalıdır (UTC).
+        AccessToken CreateToken(string sessionKey, DateTime expiration);
     }
 }

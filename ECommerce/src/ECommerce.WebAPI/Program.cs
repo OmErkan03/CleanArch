@@ -4,6 +4,7 @@ using ECommerce.WebAPI.ExceptionHandling;
 using ECommerce.WebAPI.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Uludag.Core.Caching.Redis;
 using Uludag.Core.Security;
 using Uludag.Core.Security.Constants;
 using Uludag.Core.Security.JWT;
@@ -30,7 +31,7 @@ builder.Services
         options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // Operation claim'ler token'da "role" adıyla taşınır (bkz. JwtHelper).
+            // Operation claim'ler "role" adıyla taşınır (Redis'teki oturumdan eklenir, bkz. SessionTokenValidator).
             RoleClaimType = SecurityClaimTypes.OperationClaim,
             ValidateIssuer = true,
             ValidIssuer = tokenOptions.Issuer,
@@ -43,7 +44,17 @@ builder.Services
             // Varsayılan 5 dk tolerans yerine süresi dolan token hemen geçersiz olsun.
             ClockSkew = TimeSpan.Zero
         };
+
+        // Token yalnızca oturum anahtarını taşır. İmza doğrulandıktan sonra kullanıcı bilgileri (sub, email, role) Redis'ten okunur.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = SessionTokenValidator.OnTokenValidated
+        };
     });
+
+// ---------- Redis ----------
+// Oturumlar (UserSession) Redis'te tutulur. ICacheService ve ISessionStore'u kaydeder.
+builder.Services.AddRedisCache(builder.Configuration);
 
 // AuthenticationBehavior isteği yapan kullanıcıyı ICurrentUser üzerinden öğrenir.
 builder.Services.AddHttpContextAccessor();

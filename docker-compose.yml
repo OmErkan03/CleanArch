@@ -1,7 +1,66 @@
-# Geliştirme ortamı için PostgreSQL
+# Geliştirme ortamı için PostgreSQL ve Redis (Master - Replica - Sentinel)
 # Başlatmak : docker compose up -d
 # Durdurmak : docker compose down        (veriler volume'da kalır)
 # Sıfırlamak: docker compose down -v     (veriler de silinir)
+#
+# ---------------- Redis topolojisi ----------------
+#   redis-master     :6379   => yazma + okuma
+#   redis-replica-1  :6380   => master'ın kopyası (salt okunur)
+#   redis-replica-2  :6381   => master'ın kopyası (salt okunur)
+#   redis-sentinel-1 :26379  ┐
+#   redis-sentinel-2 :26380  ├ master'ı izler; çökerse replica'lardan birini yeni master yapar (failover)
+#   redis-sentinel-3 :26381  ┘ Karar için en az 2 sentinel'in (quorum) "master çöktü" demesi gerekir.
+#
+# Uygulama Redis'e doğrudan değil SENTINEL'lere bağlanır ve "mymaster" grubunun güncel master adresini onlardan öğrenir.
+# Failover olduğunda StackExchange.Redis yeni master'a kendiliğinden geçer.
+#
+# Neden ortak ağ (network_mode: service:redis-network)?
+#   Sentinel, istemcilere master'ın ADRESİNİ bildirir. Bu adres hem container'lardan (replikasyon, failover)
+#   hem de bilgisayarda çalışan uygulamadan erişilebilir olmalıdır:
+#     - Container IP'si (172.x)     => bilgisayardan erişilemez
+#     - host.docker.internal        => bilgisayarda hosts dosyasına bağlıdır; IP değişince (DHCP/VPN) bozulur
+#   Çözüm (Kubernetes "pod" mantığı): tüm Redis node'ları ve sentinel'ler TEK bir ağ alanını (network namespace) paylaşır.
+#   Böylece birbirlerine 127.0.0.1:<port> ile ulaşırlar. Portlar bilgisayara aynı numarayla açıldığı için
+#   uygulama da 127.0.0.1:<port> ile aynı node'lara ulaşır => herkes için tek ve aynı adres.
+#   Ağı, hiçbir iş yapmayan "redis-network" container'ı sahiplenir; böylece master durdurulsa bile (failover testi)
+#   diğerlerinin ağı kopmaz. Not: redis-network yeniden oluşturulursa diğer Redis container'ları da yeniden başlatılmalıdır.
+
+x-redis-node: &redis-node
+  image: redis:7-alpine
+  restart: unless-stopped
+  network_mode: service:redis-network
+  depends_on:
+    - redis-network
+
+x-redis-sentinel: &redis-sentinel
+  <<: *redis-node
+  depends_on:
+    redis-network:
+      condition: service_started
+    redis-master:
+      condition: service_healthy
+  # Sentinel çalışırken keşfettiği bilgileri (replica'lar, diğer sentinel'ler, failover sonrası yeni master)
+  # config dosyasına geri yazar. Bu yüzden dosya volume'da tutulur ve YALNIZCA ilk açılışta oluşturulur;
+  # aksi halde her yeniden başlatmada sentinel failover'ı "unutur".
+  command:
+    - sh
+    - -c
+    - |
+      if [ ! -f /data/sentinel.conf ]; then
+        cat > /data/sentinel.conf <<EOF
+      port $$SENTINEL_PORT
+      dir /data
+      requirepass ${REDIS_PASSWORD:-uludag123}
+      sentinel announce-ip 127.0.0.1
+      sentinel announce-port $$SENTINEL_PORT
+      sentinel monitor mymaster 127.0.0.1 6379 2
+      sentinel auth-pass mymaster ${REDIS_PASSWORD:-uludag123}
+      sentinel down-after-milliseconds mymaster 5000
+      sentinel failover-timeout mymaster 15000
+      sentinel parallel-syncs mymaster 1
+      EOF
+      fi
+      exec redis-sentinel /data/sentinel.conf
 
 services:
   postgres:
@@ -25,5 +84,141 @@ services:
       timeout: 5s
       retries: 10
 
+  # Redis node'larının ve sentinel'lerin paylaştığı ağın sahibi. Kendisi hiçbir şey çalıştırmaz.
+  # Ortak ağdaki container'lar kendi port'larını açamaz; tüm portlar burada açılır.
+  redis-network:
+    image: redis:7-alpine
+    container_name: uludag-redis-network
+    restart: unless-stopped
+    init: true # durdurma sinyalini (SIGTERM) düzgün işlesin, "docker stop" beklemesin
+    command: ["tail", "-f", "/dev/null"]
+    ports:
+      - "6379:6379"
+      - "6380:6380"
+      - "6381:6381"
+      - "26379:26379"
+      - "26380:26380"
+      - "26381:26381"
+
+  # --requirepass : şifresiz bağlantıyı reddeder.
+  # --masterauth  : replica olduğunda master'a bu şifreyle bağlanır. Failover sonrası eski master replica'ya
+  #                 dönüşebileceği için TÜM node'larda tanımlıdır.
+  # --appendonly  : veriler diske de yazılır, container yeniden başlasa da oturumlar kaybolmaz.
+  # --replica-announce-ip : sentinel'e ve master'a kendini 127.0.0.1:<port> olarak tanıtır (bkz. üstteki açıklama).
+  redis-master:
+    <<: *redis-node
+    container_name: uludag-redis-master
+    command:
+      - redis-server
+      - --port
+      - "6379"
+      - --requirepass
+      - ${REDIS_PASSWORD:-uludag123}
+      - --masterauth
+      - ${REDIS_PASSWORD:-uludag123}
+      - --appendonly
+      - "yes"
+      - --replica-announce-ip
+      - 127.0.0.1
+    volumes:
+      - redis-master-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 6379 -a '${REDIS_PASSWORD:-uludag123}' --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-replica-1:
+    <<: *redis-node
+    container_name: uludag-redis-replica-1
+    depends_on:
+      redis-network:
+        condition: service_started
+      redis-master:
+        condition: service_healthy
+    command:
+      - redis-server
+      - --port
+      - "6380"
+      - --replicaof
+      - 127.0.0.1
+      - "6379"
+      - --requirepass
+      - ${REDIS_PASSWORD:-uludag123}
+      - --masterauth
+      - ${REDIS_PASSWORD:-uludag123}
+      - --appendonly
+      - "yes"
+      - --replica-announce-ip
+      - 127.0.0.1
+    volumes:
+      - redis-replica-1-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 6380 -a '${REDIS_PASSWORD:-uludag123}' --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-replica-2:
+    <<: *redis-node
+    container_name: uludag-redis-replica-2
+    depends_on:
+      redis-network:
+        condition: service_started
+      redis-master:
+        condition: service_healthy
+    command:
+      - redis-server
+      - --port
+      - "6381"
+      - --replicaof
+      - 127.0.0.1
+      - "6379"
+      - --requirepass
+      - ${REDIS_PASSWORD:-uludag123}
+      - --masterauth
+      - ${REDIS_PASSWORD:-uludag123}
+      - --appendonly
+      - "yes"
+      - --replica-announce-ip
+      - 127.0.0.1
+    volumes:
+      - redis-replica-2-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 6381 -a '${REDIS_PASSWORD:-uludag123}' --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-sentinel-1:
+    <<: *redis-sentinel
+    container_name: uludag-redis-sentinel-1
+    environment:
+      SENTINEL_PORT: 26379
+    volumes:
+      - redis-sentinel-1-data:/data
+
+  redis-sentinel-2:
+    <<: *redis-sentinel
+    container_name: uludag-redis-sentinel-2
+    environment:
+      SENTINEL_PORT: 26380
+    volumes:
+      - redis-sentinel-2-data:/data
+
+  redis-sentinel-3:
+    <<: *redis-sentinel
+    container_name: uludag-redis-sentinel-3
+    environment:
+      SENTINEL_PORT: 26381
+    volumes:
+      - redis-sentinel-3-data:/data
+
 volumes:
   postgres-data:
+  redis-master-data:
+  redis-replica-1-data:
+  redis-replica-2-data:
+  redis-sentinel-1-data:
+  redis-sentinel-2-data:
+  redis-sentinel-3-data:

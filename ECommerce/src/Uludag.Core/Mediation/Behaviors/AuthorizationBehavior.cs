@@ -8,9 +8,10 @@ namespace Uludag.Core.Mediation.Behaviors
     // bu behavior ise "bu işlemi yapmaya YETKİSİ var mı?" (403) sorusunu sorar.
     //
     // Yetki kontrolü metinseldir: isteğin istediği claim adları (ISecuredRequest.Roles) ile
-    // kullanıcının token'ındaki operation claim adları birebir (büyük/küçük harf duyarlı) karşılaştırılır.
-    // Kullanıcının claim'leri Login sırasında veritabanından (User <-> OperationClaim) okunup token'a yazılır;
-    // bu yüzden her istekte veritabanına gidilmez. Claim değişikliği kullanıcının tekrar giriş yapmasıyla geçerli olur.
+    // kullanıcının oturumundaki operation claim adları birebir (büyük/küçük harf duyarlı) karşılaştırılır.
+    // Kullanıcının claim'leri Login sırasında veritabanından (User <-> OperationClaim) okunup Redis'teki oturuma yazılır;
+    // bu yüzden her istekte veritabanına gidilmez. Claim değişikliği tekrar giriş yapılmasıyla
+    // ya da Redis'teki oturumun güncellenmesi/silinmesiyle geçerli olur.
     public class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
         where TRequest : notnull, IRequest<TResponse>
     {

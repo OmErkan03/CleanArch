@@ -19,7 +19,8 @@ namespace ECommerce.Application.Features.Auth.Queries.GetMe
 
             public Task<GetMeResponse> Handle(GetMeQuery request, CancellationToken cancellationToken)
             {
-                // Bilgiler veritabanından değil, token'ın içindeki claim'lerden okunur.
+                // Bilgiler veritabanından değil, token'daki anahtarla Redis'ten okunan oturumdan gelir
+                // (SessionTokenValidator bunları HttpContext.User'a claim olarak ekler).
                 return Task.FromResult(new GetMeResponse
                 {
                     Id = _currentUser.UserId!.Value,
