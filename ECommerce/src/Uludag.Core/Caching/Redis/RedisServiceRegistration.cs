@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
+using Uludag.Core.Security.RefreshTokens;
 using Uludag.Core.Security.Sessions;
 
 namespace Uludag.Core.Caching.Redis
@@ -27,6 +28,7 @@ namespace Uludag.Core.Caching.Redis
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(options.ConnectionString));
             services.AddSingleton<ICacheService, RedisCacheService>();
             services.AddSingleton<ISessionStore, CacheSessionStore>();
+            services.AddSingleton<IRefreshTokenStore, RedisRefreshTokenStore>();
 
             return services;
         }

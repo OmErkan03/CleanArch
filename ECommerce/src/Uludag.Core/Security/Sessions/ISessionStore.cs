@@ -12,6 +12,9 @@ namespace Uludag.Core.Security.Sessions
         // Oturumu sonlandırır: token'ın süresi dolmamış olsa bile artık geçersizdir (logout, yetki değişikliği...).
         Task RemoveAsync(string sessionKey, CancellationToken cancellationToken = default);
 
+        // Tek bir oturumu günceller; kalan süresi değişmez. Oturum yoksa (süresi dolmuş / silinmiş) false döner.
+        Task<bool> UpdateSessionAsync(string sessionKey, Action<UserSession> update, CancellationToken cancellationToken = default);
+
         // Kullanıcının AÇIK OLAN TÜM oturumlarını (farklı cihaz/tarayıcı) günceller; kalan süreleri değişmez.
         // Oturum her istekte Redis'ten okunduğu için değişiklik kullanıcının bir sonraki isteğinde geçerli olur,
         // yeniden giriş yapması gerekmez. Güncellenen oturum sayısını döndürür.

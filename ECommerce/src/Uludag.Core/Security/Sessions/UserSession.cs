@@ -8,6 +8,9 @@ namespace Uludag.Core.Security.Sessions
         public string Email { get; set; } = string.Empty;
         public List<string> OperationClaims { get; set; } = [];
 
+        // Bu oturumu açan refresh token ailesi (bkz. IRefreshTokenStore). Logout, oturumla birlikte bu aileyi de iptal eder.
+        public string? RefreshTokenFamilyId { get; set; }
+
         // UTC
         public DateTime CreatedAt { get; set; }
         public DateTime ExpiresAt { get; set; }
