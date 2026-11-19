@@ -8,6 +8,9 @@ namespace Uludag.Core.Security
         Guid? UserId { get; }
         string? Email { get; }
 
+        // İsteğin ait olduğu oturumun Redis'teki anahtarı (JWT'deki "sid"). Logout bu oturumu siler.
+        string? SessionKey { get; }
+
         // Token'daki operation claim adları (ör. "Product.Read"). Oturum açılmamışsa boştur.
         IReadOnlyCollection<string> OperationClaims { get; }
     }

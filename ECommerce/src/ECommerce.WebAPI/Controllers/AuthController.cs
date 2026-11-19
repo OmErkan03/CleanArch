@@ -1,4 +1,6 @@
 using ECommerce.Application.Features.Auth.Commands.Login;
+using ECommerce.Application.Features.Auth.Commands.Logout;
+using ECommerce.Application.Features.Auth.Commands.LogoutAll;
 using ECommerce.Application.Features.Auth.Commands.MfaSetup;
 using ECommerce.Application.Features.Auth.Commands.MfaSetupConfirm;
 using ECommerce.Application.Features.Auth.Commands.MfaVerify;
@@ -58,6 +60,24 @@ namespace ECommerce.WebAPI.Controllers
             var response = await sender.Send(command, cancellationToken);
 
             return Ok(response);
+        }
+
+        // Bu cihazdaki oturumu kapatır; aynı token bir sonraki istekte 401 alır.
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+        {
+            await sender.Send(new LogoutCommand(), cancellationToken);
+
+            return NoContent();
+        }
+
+        // Tüm cihazlardaki oturumları kapatır; kapatılan oturum sayısını döner.
+        [HttpPost("logout-all")]
+        public async Task<IActionResult> LogoutAll(CancellationToken cancellationToken)
+        {
+            var count = await sender.Send(new LogoutAllCommand(), cancellationToken);
+
+            return Ok(new { revokedSessions = count });
         }
 
         // [Authorize] YOK: koruma AuthenticationBehavior'dan gelir (GetMeQuery IAllowAnonymousRequest değil).
