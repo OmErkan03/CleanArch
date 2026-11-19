@@ -1,0 +1,23 @@
+# Yasaklı API'ler (bkz. Directory.Build.props). Kullanımı derleme HATASI (RS0030) verir.
+# Biçim: <DocumentationCommentId>;<hata mesajında gösterilecek açıklama>
+# Her overload ayrı satırda, tam imzasıyla yazılmalıdır (parametresiz yazılan ID eşleşmez).
+# Imzalar: Microsoft.EntityFrameworkCore.Relational.xml içindeki name="M:..." değerleri.
+
+# --- Ham (raw) SQL: SQL Injection riski ---
+# Bu metotlar SQL'i düz string olarak alır; değer string birleştirme / $"..." ile eklenirse parametreleştirilmez.
+# Bunun yerine FormattableString alan muadilleri kullanılmalıdır: {deger} her zaman DbParameter'a çevrilir.
+
+# FromSqlRaw => FromSql($"... {deger}")
+M:Microsoft.EntityFrameworkCore.RelationalQueryableExtensions.FromSqlRaw``1(Microsoft.EntityFrameworkCore.DbSet{``0},System.String,System.Object[]);SQL Injection riski: FromSqlRaw yasak. Bunun yerine FromSql($"... {deger}") kullanin.
+
+# ExecuteSqlRaw => ExecuteSql($"... {deger}")
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[]);SQL Injection riski: ExecuteSqlRaw yasak. Bunun yerine ExecuteSql($"... {deger}") kullanin.
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable{System.Object});SQL Injection riski: ExecuteSqlRaw yasak. Bunun yerine ExecuteSql($"... {deger}") kullanin.
+
+# ExecuteSqlRawAsync => ExecuteSqlAsync($"... {deger}")
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Threading.CancellationToken);SQL Injection riski: ExecuteSqlRawAsync yasak. Bunun yerine ExecuteSqlAsync($"... {deger}") kullanin.
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[]);SQL Injection riski: ExecuteSqlRawAsync yasak. Bunun yerine ExecuteSqlAsync($"... {deger}") kullanin.
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRawAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Collections.Generic.IEnumerable{System.Object},System.Threading.CancellationToken);SQL Injection riski: ExecuteSqlRawAsync yasak. Bunun yerine ExecuteSqlAsync($"... {deger}") kullanin.
+
+# SqlQueryRaw => SqlQuery<T>($"... {deger}")
+M:Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.SqlQueryRaw``1(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade,System.String,System.Object[]);SQL Injection riski: SqlQueryRaw yasak. Bunun yerine SqlQuery<T>($"... {deger}") kullanin.
