@@ -40,8 +40,8 @@ namespace ECommerce.Application
                 services.AddScoped(type, type);
             }
 
-            // Şifre + MFA doğrulanmış kullanıcı için Redis oturumu açıp JWT üretir (MFA komutları kullanır).
-            services.AddScoped<AccessTokenService>();
+            // Oturum yaşam döngüsü: giriş (şifre + MFA sonrası), refresh token ile yenileme, çıkış.
+            services.AddScoped<AuthSessionService>();
 
             // İleride Application'a ait diğer kayıtlar da buraya eklenir (mapper, validator vb.)
 

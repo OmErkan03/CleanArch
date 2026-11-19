@@ -20,18 +20,18 @@ namespace ECommerce.Application.Features.Auth.Commands.MfaSetupConfirm
             private readonly IMfaChallengeStore _challengeStore;
             private readonly IUserRepository _userRepository;
             private readonly MfaBusinessRules _mfaBusinessRules;
-            private readonly AccessTokenService _accessTokenService;
+            private readonly AuthSessionService _authSessionService;
 
             public ConfirmMfaSetupCommandHandler(
                 IMfaChallengeStore challengeStore,
                 IUserRepository userRepository,
                 MfaBusinessRules mfaBusinessRules,
-                AccessTokenService accessTokenService)
+                AuthSessionService authSessionService)
             {
                 _challengeStore = challengeStore;
                 _userRepository = userRepository;
                 _mfaBusinessRules = mfaBusinessRules;
-                _accessTokenService = accessTokenService;
+                _authSessionService = authSessionService;
             }
 
             public async Task<LoginResponse> Handle(ConfirmMfaSetupCommand request, CancellationToken cancellationToken)
@@ -53,7 +53,7 @@ namespace ECommerce.Application.Features.Auth.Commands.MfaSetupConfirm
                 // MFA token tek kullanımlıktır.
                 await _challengeStore.RemoveAsync(request.MfaToken, cancellationToken);
 
-                return LoginResponse.Succeeded(await _accessTokenService.CreateAsync(user.Id, user.Email, cancellationToken));
+                return LoginResponse.Succeeded(await _authSessionService.SignInAsync(user.Id, user.Email, cancellationToken));
             }
         }
     }

@@ -1,8 +1,8 @@
+using ECommerce.Application.Features.Auth.Services;
 using ECommerce.Application.Features.User.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 using Uludag.Core.Security.Constants;
-using Uludag.Core.Security.Sessions;
 
 namespace ECommerce.Application.Features.User.Commands.ResetMfa
 {
@@ -21,13 +21,13 @@ namespace ECommerce.Application.Features.User.Commands.ResetMfa
         public class ResetUserMfaCommandHandler : IRequestHandler<ResetUserMfaCommand>
         {
             private readonly IUserRepository _userRepository;
-            private readonly ISessionStore _sessionStore;
+            private readonly AuthSessionService _authSessionService;
             private readonly UserBusinessRules _userBusinessRules;
 
-            public ResetUserMfaCommandHandler(IUserRepository userRepository, ISessionStore sessionStore, UserBusinessRules userBusinessRules)
+            public ResetUserMfaCommandHandler(IUserRepository userRepository, AuthSessionService authSessionService, UserBusinessRules userBusinessRules)
             {
                 _userRepository = userRepository;
-                _sessionStore = sessionStore;
+                _authSessionService = authSessionService;
                 _userBusinessRules = userBusinessRules;
             }
 
@@ -41,10 +41,11 @@ namespace ECommerce.Application.Features.User.Commands.ResetMfa
                 user.MfaSecret = null;
                 await _userRepository.SaveChangesAsync(cancellationToken);
 
-                // Eski cihazla açılmış oturumlar da kapanır (kayıp telefon başkasının elinde olabilir).
+                // Eski cihazla açılmış oturumlar ve refresh token'lar da iptal edilir (kayıp telefon başkasının elinde olabilir;
+                // refresh token kalsaydı yeniden MFA'ya gerek kalmadan 3 güne kadar yeni access token alınabilirdi).
                 // Yarım kalmış "Verify" MFA token'ları ayrıca silinmez: MfaBusinessRules.UserShouldMatchChallenge
                 // MFA'sı kapalı kullanıcı için doğrulama token'ını zaten reddeder.
-                await _sessionStore.RemoveUserSessionsAsync(user.Id, cancellationToken);
+                await _authSessionService.SignOutEverywhereAsync(user.Id, cancellationToken);
             }
         }
     }
