@@ -2,6 +2,7 @@ using ECommerce.Application.Features.Auth.Rules;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Mediation;
 using Uludag.Core.Security.JWT;
+using Uludag.Core.Security.Sessions;
 
 namespace ECommerce.Application.Features.Auth.Commands.Login
 {
@@ -18,12 +19,21 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
             private readonly IUserRepository _userRepository;
             private readonly AuthBusinessRules _authBusinessRules;
             private readonly ITokenHelper _tokenHelper;
+            private readonly ISessionStore _sessionStore;
+            private readonly TokenOptions _tokenOptions;
 
-            public LoginCommandHandler(IUserRepository userRepository, AuthBusinessRules authBusinessRules, ITokenHelper tokenHelper)
+            public LoginCommandHandler(
+                IUserRepository userRepository,
+                AuthBusinessRules authBusinessRules,
+                ITokenHelper tokenHelper,
+                ISessionStore sessionStore,
+                TokenOptions tokenOptions)
             {
                 _userRepository = userRepository;
                 _authBusinessRules = authBusinessRules;
                 _tokenHelper = tokenHelper;
+                _sessionStore = sessionStore;
+                _tokenOptions = tokenOptions;
             }
 
             public async Task<AccessToken> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -33,11 +43,24 @@ namespace ECommerce.Application.Features.Auth.Commands.Login
 
                 await _authBusinessRules.PasswordShouldMatch(user, request.Password);
 
-                // Kullanıcının yetkileri token'a yazılır; AuthorizationBehavior her istekte DB'ye gitmeden bunları kontrol eder.
+                // Kullanıcının yetkileri Redis'teki oturuma yazılır; AuthorizationBehavior her istekte DB'ye gitmeden bunları kontrol eder.
                 var operationClaims = await _userRepository.GetOperationClaimNamesAsync(user.Id, cancellationToken);
 
-                // Kimlik doğrulandı => kullanıcı bilgilerini taşıyan, imzalı bir token üretilir.
-                return _tokenHelper.CreateToken(user.Id, user.Email, operationClaims);
+                var now = DateTime.UtcNow;
+                var expiration = now.AddMinutes(_tokenOptions.AccessTokenExpirationMinutes);
+
+                // Kullanıcı bilgileri Redis'e yazılır (TTL = token ömrü), karşılığında rastgele bir oturum anahtarı alınır.
+                var sessionKey = await _sessionStore.CreateAsync(new UserSession
+                {
+                    UserId = user.Id,
+                    Email = user.Email,
+                    OperationClaims = operationClaims.ToList(),
+                    CreatedAt = now,
+                    ExpiresAt = expiration
+                }, cancellationToken);
+
+                // Token yalnızca bu anahtarı taşır; kullanıcı bilgileri her istekte Redis'ten okunur.
+                return _tokenHelper.CreateToken(sessionKey, expiration);
             }
         }
     }

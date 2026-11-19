@@ -8,6 +8,10 @@ namespace Uludag.Core.Security.JWT
     // JWT = Header.Payload.Signature (her parça Base64Url)
     // Payload ŞİFRELİ DEĞİLDİR, herkes okuyabilir (jwt.io) => içine şifre vb. hassas bilgi konmaz.
     // Güvenliği imza sağlar: içerik değiştirilirse imza tutmaz.
+    //
+    // Payload'da kullanıcıya ait TEK bilgi oturum anahtarıdır ("sid"). Email, yetkiler vb. Redis'teki oturumdan okunur.
+    // Faydaları: token okunduğunda kişisel veri sızmaz, token küçük kalır ve oturum Redis'ten silinerek
+    // token süresi dolmadan iptal edilebilir (logout, yetki değişikliği).
     public class JwtHelper : ITokenHelper
     {
         private readonly TokenOptions _tokenOptions;
@@ -21,21 +25,9 @@ namespace Uludag.Core.Security.JWT
                 SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey));
         }
 
-        public AccessToken CreateToken(Guid userId, string email, IEnumerable<string> operationClaims)
+        public AccessToken CreateToken(string sessionKey, DateTime expiration)
         {
-            List<Claim> claims =
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, email),
-                // jti: token'a özgü benzersiz Id (ileride iptal/blacklist için kullanılabilir)
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            ];
-
-            // Her operation claim ayrı bir "role" claim'i olur; AuthorizationBehavior bunları metinsel karşılaştırır.
-            claims.AddRange(operationClaims.Select(name => new Claim(SecurityClaimTypes.OperationClaim, name)));
-
             var now = DateTime.UtcNow;
-            var expiration = now.AddMinutes(_tokenOptions.AccessTokenExpirationMinutes);
 
             var descriptor = new SecurityTokenDescriptor
             {
@@ -45,8 +37,9 @@ namespace Uludag.Core.Security.JWT
                 NotBefore = now,
                 Expires = expiration,
                 SigningCredentials = _signingCredentials,
-                // Claim = token'ın taşıdığı kullanıcı bilgisi. İstek geldiğinde ICurrentUser bunları okur.
-                Subject = new ClaimsIdentity(claims)
+                // Tek claim: Redis'teki oturumun anahtarı. İstek geldiğinde bu anahtarla oturum Redis'ten okunur
+                // ve kullanıcı claim'leri (sub, email, role) HttpContext.User'a eklenir (bkz. WebAPI => SessionTokenValidator).
+                Subject = new ClaimsIdentity([new Claim(SecurityClaimTypes.SessionKey, sessionKey)])
             };
 
             return new AccessToken
