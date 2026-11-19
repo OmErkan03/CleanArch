@@ -59,6 +59,23 @@ namespace Uludag.Core.Security.Sessions
                 await _cacheService.SetRemoveAsync(UserSessionsCacheKey(session.UserId), sessionKey);
         }
 
+        public async Task<int> RemoveUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var userSessionsKey = UserSessionsCacheKey(userId);
+            var sessionKeys = await _cacheService.SetMembersAsync(userSessionsKey, cancellationToken);
+
+            var removedCount = 0;
+            foreach (var sessionKey in sessionKeys)
+            {
+                if (await _cacheService.RemoveAsync(SessionCacheKey(sessionKey), cancellationToken))
+                    removedCount++;
+            }
+
+            // Index'in kendisi de silinir.
+            await _cacheService.RemoveAsync(userSessionsKey, cancellationToken);
+            return removedCount;
+        }
+
         public async Task<int> UpdateUserSessionsAsync(Guid userId, Action<UserSession> update, CancellationToken cancellationToken = default)
         {
             var userSessionsKey = UserSessionsCacheKey(userId);

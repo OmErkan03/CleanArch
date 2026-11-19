@@ -16,5 +16,9 @@ namespace Uludag.Core.Security.Sessions
         // Oturum her istekte Redis'ten okunduğu için değişiklik kullanıcının bir sonraki isteğinde geçerli olur,
         // yeniden giriş yapması gerekmez. Güncellenen oturum sayısını döndürür.
         Task<int> UpdateUserSessionsAsync(Guid userId, Action<UserSession> update, CancellationToken cancellationToken = default);
+
+        // Kullanıcının TÜM oturumlarını sonlandırır (tüm cihazlardan çıkış, MFA sıfırlama, hesap ele geçirilmesi...).
+        // Elindeki token'ların süresi dolmamış olsa bile hiçbiri artık kabul edilmez. Silinen oturum sayısını döndürür.
+        Task<int> RemoveUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }

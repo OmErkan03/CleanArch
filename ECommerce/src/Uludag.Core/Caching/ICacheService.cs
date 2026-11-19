@@ -14,6 +14,10 @@ namespace Uludag.Core.Caching
         // Anahtar yoksa (süresi dolmuş / silinmiş) hiçbir şey yazmaz ve false döner; böylece silinmiş bir kayıt yanlışlıkla geri gelmez.
         Task<bool> ReplaceAsync<T>(string key, T value, CancellationToken cancellationToken = default);
 
+        // Yalnızca anahtar YOKSA yazar (atomik). Yazdıysa true, anahtar zaten varsa false döner.
+        // "Bu iş daha önce yapıldı mı?" kontrolünü yarış durumu (race condition) olmadan yapmak için kullanılır.
+        Task<bool> SetIfNotExistsAsync<T>(string key, T value, TimeSpan expiration, CancellationToken cancellationToken = default);
+
         Task<bool> RemoveAsync(string key, CancellationToken cancellationToken = default);
 
         Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default);

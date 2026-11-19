@@ -47,6 +47,14 @@ namespace Uludag.Core.Caching.Redis
             return Database.StringSetAsync(BuildKey(key), json, expiry: null, keepTtl: true, when: When.Exists);
         }
 
+        public Task<bool> SetIfNotExistsAsync<T>(string key, T value, TimeSpan expiration, CancellationToken cancellationToken = default)
+        {
+            var json = JsonSerializer.Serialize(value, JsonOptions);
+
+            // SET key value PX ... NX => tek komut; iki istek aynı anda gelse bile yalnızca biri true alır.
+            return Database.StringSetAsync(BuildKey(key), json, expiration, when: When.NotExists);
+        }
+
         public Task<bool> RemoveAsync(string key, CancellationToken cancellationToken = default) =>
             Database.KeyDeleteAsync(BuildKey(key));
 

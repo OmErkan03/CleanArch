@@ -18,6 +18,8 @@ namespace ECommerce.WebAPI.Security
 
         public string? Email => User?.FindFirstValue(JwtRegisteredClaimNames.Email);
 
+        public string? SessionKey => User?.FindFirstValue(SecurityClaimTypes.SessionKey);
+
         public IReadOnlyCollection<string> OperationClaims =>
             User?.FindAll(SecurityClaimTypes.OperationClaim).Select(c => c.Value).ToArray() ?? [];
     }

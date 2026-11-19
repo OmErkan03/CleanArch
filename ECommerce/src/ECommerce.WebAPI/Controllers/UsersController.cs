@@ -1,3 +1,4 @@
+using ECommerce.Application.Features.User.Commands.ResetMfa;
 using ECommerce.Application.Features.UserOperationClaim.Commands.Assign;
 using ECommerce.Application.Features.UserOperationClaim.Commands.Revoke;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,16 @@ namespace ECommerce.WebAPI.Controllers
         public async Task<IActionResult> RevokeOperationClaim([FromRoute] Guid userId, [FromRoute] int operationClaimId, CancellationToken cancellationToken)
         {
             await sender.Send(new RevokeOperationClaimCommand { UserId = userId, OperationClaimId = operationClaimId }, cancellationToken);
+
+            return NoContent();
+        }
+
+        // Kullanıcının MFA'sını sıfırlar ve tüm oturumlarını kapatır (telefon kaybı vb.). Yalnızca Admin.
+        // Kullanıcı bir sonraki girişinde authenticator'ı yeniden kurar.
+        [HttpDelete("{userId:guid}/mfa")]
+        public async Task<IActionResult> ResetMfa([FromRoute] Guid userId, CancellationToken cancellationToken)
+        {
+            await sender.Send(new ResetUserMfaCommand { UserId = userId }, cancellationToken);
 
             return NoContent();
         }

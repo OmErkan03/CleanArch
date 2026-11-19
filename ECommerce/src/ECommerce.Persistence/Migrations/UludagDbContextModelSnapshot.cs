@@ -252,6 +252,12 @@ namespace ECommerce.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsMfaEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MfaSecret")
+                        .HasColumnType("text");
+
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("bytea");
