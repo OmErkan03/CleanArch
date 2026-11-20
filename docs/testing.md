@@ -1,7 +1,6 @@
 # Testing
 
-> Filled at bootstrap (2026-11-19). No tests exist yet: spec 0001 (test skeleton) creates the
-> test projects and activates the test steps in `scripts/check.conf`.
+> Filled at bootstrap (2026-11-19); test setup in place since spec 0001 (test skeleton).
 
 ## The contract
 - Every acceptance criterion maps to at least one test (criterion ↔ test map lives in the plan).
@@ -10,12 +9,24 @@
 
 ## Frameworks & layout
 - xUnit v3 + Shouldly; test projects under `ECommerce/tests/`, added to `UludagEnerji.slnx`.
+  Runner: Microsoft.Testing.Platform (`global.json` "test.runner"); VSTest is not used.
 - **Unit** (`ECommerce.UnitTests`): Domain, `<Entity>BusinessRules`, handlers, `Uludag.Core`
-  helpers — no Docker, no network. Runs in the fast profile.
+  helpers — no Docker, no network. Runs in both profiles (`test-unit [fast]`).
 - **Integration** (`ECommerce.IntegrationTests`): `WebApplicationFactory<Program>` +
   Testcontainers with real PostgreSQL 17 and Redis 7 — auth, sessions, ownership (IDOR),
-  authorization, rate limiting through HTTP. Marked with the trait `Category=Integration`;
-  full profile only. The fast/full split is by that trait (selector), never by project list.
+  authorization, rate limiting through HTTP. Every test there carries the trait
+  `Category=Integration` through the assembly-level `[assembly: Trait(...)]` in
+  `Infrastructure/AssemblyInfo.cs` — a new test file needs nothing extra. Full profile only
+  (`test-integration`, `requires … docker info`).
+- The split is by that trait (selector), never by project list:
+  `sh ECommerce/tests/run-tests.sh --filter-not-trait "Category=Integration"` (unit) and
+  `--filter-trait "Category=Integration"` (integration). `run-tests.sh` fails on a red run **and**
+  on a step that executed zero tests.
+- Running one test while writing it (Two speeds rule 7):
+  `dotnet test --project ECommerce/tests/ECommerce.UnitTests --filter-method "*MoneyTests*"`.
+- Integration fixture: `ApiFactory` (assembly fixture) starts one PostgreSQL + one Redis per run,
+  applies the EF migrations to the empty database, and runs the app in environment `Testing`
+  with per-run JWT and MFA keys supplied through `UseSetting` (Program.cs reads options eagerly).
 - Naming: `<UnitUnderTest>Tests`, methods `<Method>_<Condition>_<Expected>`.
 - Data (Resource hygiene 5): each test run gets fresh containers (a fresh database), removed at the
   end of the run; nothing is shared with the developer's `docker-compose` databases.
