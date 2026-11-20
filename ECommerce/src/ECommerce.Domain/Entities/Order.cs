@@ -1,8 +1,10 @@
-﻿using ECommerce.Domain.ValueObjects;
+﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.ValueObjects;
 
 namespace ECommerce.Domain.Entities
 {
-    public class Order
+    // IOwnedEntity => sipariş yalnızca sahibi (veya Order.Admin / Admin) tarafından görülebilir ve değiştirilebilir.
+    public class Order : IOwnedEntity
     {
         public Guid Id { get; set; }
         public DateTime OrderDate { get; set; }
