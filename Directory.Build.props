@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Bu klasör altındaki TÜM projelere (mevcut ve ileride eklenecek) otomatik uygulanır; csproj'lara ayrıca bir şey eklemek gerekmez.
+
+    Yasaklı API'ler (BannedSymbols.txt):
+      Microsoft.CodeAnalysis.BannedApiAnalyzers, BannedSymbols.txt'te listelenen API'lerin kullanımını RS0030 ile işaretler.
+      RS0030 aşağıda hata (error) yapılmıştır: yasaklı bir API kullanan kod DERLENMEZ, dolayısıyla hiçbir zaman çalışamaz.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Link="BannedSymbols.txt" Visible="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030</WarningsAsErrors>
+  </PropertyGroup>
+</Project>
