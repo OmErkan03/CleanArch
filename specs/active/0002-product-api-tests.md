@@ -66,6 +66,7 @@ none — no user interface. The "users" are API clients; the HTTP contract is th
 - Concurrency (AC-9) is race-dependent: its evidence is an observation outside check — 20 rounds
   of two parallel creates with a fresh name each; a single round producing two products is a
   deviation (bug entry). A test for it enters check only if every round behaves as expected.
+- Revision 1 (R-08, ship gate, 2026-11-20): AC-7, AC-8 and AC-9 were worded as code behavior while the Intent and clarify decision 1 make a deviation an evidenced bug entry; reworded to "proven by a passing test or recorded as a reproducible bug entry". No test, plan step or code changes; the deviations stay open as B-7…B-15 for a fix workflow — omer.erkan, 2026-11-20.
 - Split: proposed 0002 (identity, authorization, CRUD, coverage, isolation) and 0003 (data rules,
   integrity, concurrency, deviation ledger); kept as one — omer.erkan, 2026-11-20, one suite on one harness.
 - Out of scope: Order / OrderItem flows beyond what referential integrity needs; rate-limit
@@ -78,9 +79,9 @@ none — no user interface. The "users" are API clients; the HTTP contract is th
 - [ ] AC-4 — Read: the list contains the created products; get by an unknown id returns 404 ProblemDetails.
 - [ ] AC-5 — Update: 204 and a following get returns the new values; an id in the body is ignored in favor of the route id; an unknown id returns 404 and creates nothing.
 - [ ] AC-6 — Delete: 204, then get returns 404; deleting again or deleting an unknown id returns 404.
-- [ ] AC-7 — Data rules on create and update: duplicate name (BR-9), negative amount (BR-19), empty or over-long name (BR-20), negative stock (BR-21), invalid currency (BR-22), more than 2 decimals (BR-23) and malformed JSON each return 400 ProblemDetails and change nothing; zero amount and zero stock are accepted.
-- [ ] AC-8 — Deleting a product referenced by an order item returns a 4xx ProblemDetails (not 500) and the product still exists.
-- [ ] AC-9 — Two concurrent creates with the same new name: exactly one returns 201, the other 400, and one product with that name exists — observed over 20 rounds outside check (see Constraints).
+- [ ] AC-7 — Data rules on create and update — duplicate name (BR-9), negative amount (BR-19), empty or over-long name (BR-20), negative stock (BR-21), invalid currency (BR-22), more than 2 decimals (BR-23) and malformed JSON are expected to return 400 ProblemDetails and change nothing; zero amount and zero stock are expected to be accepted. Each expectation is either proven by a passing test in check, or recorded in `specs/backlog.md` as a reproducible bug entry with the request and the observed response (revised 2026-11-20, R-08).
+- [ ] AC-8 — Deleting a product referenced by an order item is expected to return a 4xx ProblemDetails (not 500) with the product kept; this is either proven by a passing test, or recorded as a reproducible bug entry with the observed response (revised 2026-11-20, R-08).
+- [ ] AC-9 — Two concurrent creates with the same new name are expected to produce exactly one 201, one 400 and one stored product, observed over 20 rounds outside check (see Constraints); the outcome is either confirmed by that observation, or recorded as a reproducible bug entry with the observed rounds (revised 2026-11-20, R-08).
 - [ ] AC-10 — Any 500 observed in this suite carries no exception detail (security.md).
 - [ ] AC-11 — Every expectation of AC-1…AC-10 is either proven by a passing test in check, or recorded in `specs/backlog.md` as a bug entry (request, expected, observed, criterion) — none dropped, none committed red or skipped.
 - [ ] AC-12 — Coverage of the Product code (controller, feature, mapper, rules, repository, configuration) and of the whole solution — line and branch — is reported from the integration run.
