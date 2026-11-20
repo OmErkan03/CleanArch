@@ -7,6 +7,9 @@
     <Project Path="ECommerce/src/ECommerce.Persistence/ECommerce.Persistence.csproj" />
     <Project Path="ECommerce/src/ECommerce.WebAPI/ECommerce.WebAPI.csproj" />
   </Folder>
+  <Folder Name="/ECommerce/tests/">
+    <Project Path="ECommerce/tests/ECommerce.UnitTests/ECommerce.UnitTests.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="docker-compose.yml" />
   </Folder>
