@@ -361,3 +361,20 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# --- ANEW (merged from .gitignore.anew at bootstrap) ---
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# Claude Code personal settings (shared settings.json IS committed)
+.claude/settings.local.json
+
+# Claude Code worktrees (other branches checked out here)
+.claude/worktrees/

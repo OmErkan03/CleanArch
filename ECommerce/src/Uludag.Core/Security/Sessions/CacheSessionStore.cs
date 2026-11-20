@@ -59,18 +59,6 @@ namespace Uludag.Core.Security.Sessions
                 await _cacheService.SetRemoveAsync(UserSessionsCacheKey(session.UserId), sessionKey);
         }
 
-        public async Task<bool> UpdateSessionAsync(string sessionKey, Action<UserSession> update, CancellationToken cancellationToken = default)
-        {
-            var session = await GetAsync(sessionKey, cancellationToken);
-            if (session is null)
-                return false;
-
-            update(session);
-
-            // KEEPTTL + XX: kalan süre korunur; oturum bu arada sona erdiyse geri yazılmaz.
-            return await _cacheService.ReplaceAsync(SessionCacheKey(sessionKey), session, cancellationToken);
-        }
-
         public async Task<int> RemoveUserSessionsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var userSessionsKey = UserSessionsCacheKey(userId);

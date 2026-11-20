@@ -1,15 +1,15 @@
 ﻿using ECommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Uludag.Core.Security.Ownership;
 
 namespace ECommerce.Persistence.Contexts
 {
-    public class UludagDbContext : DbContext
+    // IDOR korumasıyla ilgili kısım (query filter'lar ve SaveChanges kontrolü) UludagDbContext.Ownership.cs'tedir.
+    public partial class UludagDbContext : DbContext
     {
-        public UludagDbContext(DbContextOptions options) : base(options)
+        public UludagDbContext(DbContextOptions options, IDataOwnershipContext ownership) : base(options)
         {
+            _ownership = ownership;
         }
         protected UludagDbContext()
         {
@@ -25,7 +25,20 @@ namespace ECommerce.Persistence.Contexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(UludagDbContext).Assembly);
+            ApplyOwnershipFilters(modelBuilder);
             base.OnModelCreating(modelBuilder);
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            EnforceOwnershipOnWrite();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            await EnforceOwnershipOnWriteAsync(cancellationToken);
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 }

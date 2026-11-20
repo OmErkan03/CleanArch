@@ -10,7 +10,7 @@ namespace Uludag.Core.Security.RefreshTokens
     // Redis'teki anahtarlar ({InstanceName} ön ekiyle):
     //   refresh-family:{familyId}          => hash { userId, tokenHash, sessionKey, expiresAt }
     //                                         TTL = ailenin mutlak bitiş zamanı (PEXPIREAT) => 3 gün sonra kendiliğinden silinir
-    //   user-refresh-families:{userId}     => set, kullanıcının aileleri (logout-all / MFA sıfırlama için index)
+    //   user-refresh-families:{userId}     => set, kullanıcının aileleri (logout / MFA sıfırlama için index)
     //
     // Rotation neden Lua script'i?
     //   "Token doğru mu? => yenisini yaz" iki ayrı komut olsaydı, aynı token'la aynı anda gelen iki istek ikisi birden
@@ -111,6 +111,22 @@ namespace Uludag.Core.Security.RefreshTokens
             var expiresAt = DateTimeOffset.FromUnixTimeMilliseconds((long)result[3]).UtcDateTime;
             return new RefreshTokenRotation(RefreshTokenRotationStatus.Rotated, userId, familyId, previousSessionKey,
                 $"{familyId}.{newSecret}", expiresAt);
+        }
+
+        public async Task<Guid?> GetUserIdAsync(string refreshToken, CancellationToken cancellationToken = default)
+        {
+            if (!TryParse(refreshToken, out var familyId, out var secret))
+                return null;
+
+            var fields = await Database.HashGetAsync(FamilyKey(familyId), ["tokenHash", "userId"]);
+            if (fields[0].IsNullOrEmpty || fields[1].IsNullOrEmpty)
+                return null;
+
+            // Sabit süreli karşılaştırma (yalnızca okuma yapıldığı için Lua'ya gerek yok).
+            var isCurrent = CryptographicOperations.FixedTimeEquals(
+                Encoding.ASCII.GetBytes(fields[0].ToString()), Encoding.ASCII.GetBytes(Hash(secret)));
+
+            return isCurrent ? Guid.Parse(fields[1].ToString()) : null;
         }
 
         public Task SetSessionKeyAsync(string familyId, string sessionKey, CancellationToken cancellationToken = default) =>

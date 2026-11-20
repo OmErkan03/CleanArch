@@ -27,6 +27,13 @@ namespace ECommerce.Persistence.Configurations
                     .HasMaxLength(3);
             });
 
+            // Her sipariş bir kullanıcıya aittir (User 1 - N Order).
+            // Siparişi olan kullanıcı silinemez: sipariş geçmişi bozulmasın.
+            builder.HasOne(o => o.User)
+                .WithMany(u => u.Orders)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // İlişki (Order 1 - N OrderItem) OrderItemConfigurations'ta tanımlanır.
         }
     }

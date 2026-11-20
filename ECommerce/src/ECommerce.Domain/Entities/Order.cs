@@ -1,12 +1,18 @@
-﻿using ECommerce.Domain.ValueObjects;
+﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.ValueObjects;
 
 namespace ECommerce.Domain.Entities
 {
-    public class Order
+    // IOwnedEntity => sipariş yalnızca sahibi (veya Order.Admin / Admin) tarafından görülebilir ve değiştirilebilir.
+    public class Order : IOwnedEntity
     {
         public Guid Id { get; set; }
         public DateTime OrderDate { get; set; }
         public Money TotalPrice { get; set; } = default!;
+
+        // Siparişin sahibi (N Order => 1 User). İstemciden alınmaz; siparişi oluşturan oturumdaki kullanıcıdır.
+        public Guid UserId { get; set; }
+        public virtual User User { get; set; } = default!;
 
         // Navigation property: siparişin kalemleri (1 Order => N OrderItem)
         public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
