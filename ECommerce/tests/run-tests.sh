@@ -16,12 +16,17 @@ esac
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$ROOT" || exit 2
 
-out=$(dotnet test --solution UludagEnerji.slnx --no-build "$1" "$2" --ignore-exit-code 8 2>&1)
+out=$(dotnet test --solution UludagEnerji.slnx --no-build "$1" "$2" --ignore-exit-code 8 --no-ansi 2>&1)
 rc=$?
 printf '%s\n' "$out"
 
+# MTP may still colour its output in CI even when captured (docs/conventions.md, Known traps):
+# strip ANSI escape sequences before parsing, whatever the terminal detection decided.
+esc=$(printf '\033')
+plain=$(printf '%s\n' "$out" | sed "s/${esc}\[[0-9;]*[A-Za-z]//g")
+
 # The run summary's "total: <n>" is summed over every test project of the step.
-total=$(printf '%s\n' "$out" | sed -n '/Test run summary/,$ s/^ *total: *\([0-9][0-9]*\).*/\1/p' | tail -n 1)
+total=$(printf '%s\n' "$plain" | sed -n '/Test run summary/,$ s/^ *total: *\([0-9][0-9]*\).*/\1/p' | tail -n 1)
 total=${total:-0}
 
 if [ "$rc" -ne 0 ]; then

@@ -52,6 +52,7 @@
 - Npgsql `timestamptz` accepts only `DateTimeKind.Utc` values — create UTC values, never `DateTime.Now` — from bootstrap.
 - A `BannedSymbols.txt` entry without the full overload signature bans nothing — write every overload with its full documentation-comment ID (from `Microsoft.EntityFrameworkCore.Relational.xml`) — from bootstrap.
 - `Money` is a value object — replace it (`new Money(...)`), never set its fields; after any item change call `Order.RecalculateTotalPrice()` — from bootstrap.
+- MTP `dotnet test` emits ANSI colour codes in CI even when its output is captured — strip them before parsing its summary (`ECommerce/tests/run-tests.sh`) — from 0001 review round 1, F-1.
 - The app reaches Redis through Sentinel at `127.0.0.1` (shared network namespace in `docker-compose.yml`) — changing `network_mode` or announce IPs breaks failover — from bootstrap.
 
 ## Enforced by tooling
