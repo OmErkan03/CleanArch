@@ -19,6 +19,10 @@ namespace Uludag.Core.Security.RefreshTokens
         //   NotFound : token bozuk, süresi dolmuş ya da aile iptal edilmiş.
         Task<RefreshTokenRotation> RotateAsync(string refreshToken, CancellationToken cancellationToken = default);
 
+        // Token ailenin GÜNCEL token'ıysa sahibinin Id'sini döndürür; token'ı TÜKETMEZ (logout'ta kimlik tespiti için).
+        // Bozuk, süresi dolmuş, iptal edilmiş ya da eski (döndürülmüş) bir token için null döner.
+        Task<Guid?> GetUserIdAsync(string refreshToken, CancellationToken cancellationToken = default);
+
         // Yenileme sonrası ailenin işaret ettiği access oturumunu günceller (aile bu arada iptal edildiyse bir şey yapmaz).
         Task SetSessionKeyAsync(string familyId, string sessionKey, CancellationToken cancellationToken = default);
 

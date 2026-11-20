@@ -2,6 +2,7 @@ using ECommerce.Application.Features.Auth.Constants;
 using ECommerce.Application.Services.Repositories;
 using Uludag.Core.Exceptions;
 using Uludag.Core.Security.JWT;
+using Uludag.Core.Security.MultiFactor;
 using Uludag.Core.Security.RefreshTokens;
 using Uludag.Core.Security.Sessions;
 
@@ -19,6 +20,7 @@ namespace ECommerce.Application.Features.Auth.Services
         private readonly IUserRepository _userRepository;
         private readonly ISessionStore _sessionStore;
         private readonly IRefreshTokenStore _refreshTokenStore;
+        private readonly IMfaChallengeStore _mfaChallengeStore;
         private readonly ITokenHelper _tokenHelper;
         private readonly TokenOptions _tokenOptions;
 
@@ -26,12 +28,14 @@ namespace ECommerce.Application.Features.Auth.Services
             IUserRepository userRepository,
             ISessionStore sessionStore,
             IRefreshTokenStore refreshTokenStore,
+            IMfaChallengeStore mfaChallengeStore,
             ITokenHelper tokenHelper,
             TokenOptions tokenOptions)
         {
             _userRepository = userRepository;
             _sessionStore = sessionStore;
             _refreshTokenStore = refreshTokenStore;
+            _mfaChallengeStore = mfaChallengeStore;
             _tokenHelper = tokenHelper;
             _tokenOptions = tokenOptions;
         }
@@ -41,12 +45,8 @@ namespace ECommerce.Application.Features.Auth.Services
         {
             var refreshExpiresAt = DateTime.UtcNow.AddDays(_tokenOptions.RefreshTokenExpirationDays);
 
-            // Aile önce oturumsuz açılamaz (oturum aile Id'sini, aile oturum anahtarını tutar);
-            // bu yüzden önce oturum, sonra aile oluşturulur ve oturum aileye bağlanır.
-            var (accessToken, sessionKey) = await CreateSessionAsync(userId, email, refreshTokenFamilyId: null, refreshExpiresAt, cancellationToken);
+            var (accessToken, sessionKey) = await CreateSessionAsync(userId, email, refreshExpiresAt, cancellationToken);
             var refreshToken = await _refreshTokenStore.CreateAsync(userId, sessionKey, refreshExpiresAt, cancellationToken);
-
-            await _sessionStore.UpdateSessionAsync(sessionKey, s => s.RefreshTokenFamilyId = refreshToken.FamilyId, cancellationToken);
 
             return new AuthTokens(accessToken, refreshToken.Token, refreshToken.ExpiresAt);
         }
@@ -82,32 +82,29 @@ namespace ECommerce.Application.Features.Auth.Services
             if (rotation.PreviousSessionKey is not null)
                 await _sessionStore.RemoveAsync(rotation.PreviousSessionKey, cancellationToken);
 
-            var (accessToken, sessionKey) = await CreateSessionAsync(user.Id, user.Email, rotation.FamilyId, rotation.ExpiresAt, cancellationToken);
+            var (accessToken, sessionKey) = await CreateSessionAsync(user.Id, user.Email, rotation.ExpiresAt, cancellationToken);
             await _refreshTokenStore.SetSessionKeyAsync(rotation.FamilyId!, sessionKey, cancellationToken);
 
             return new AuthTokens(accessToken, rotation.NewToken!, rotation.ExpiresAt);
         }
 
-        // Bu cihazdan çıkış: oturum ve ona bağlı refresh token ailesi iptal edilir.
-        public async Task SignOutAsync(string sessionKey, CancellationToken cancellationToken = default)
+        // Kullanıcının Redis'teki HER ŞEYİNİ iptal eder (logout, Admin MFA sıfırlaması):
+        //   - tüm refresh token aileleri (tüm cihazlar)  => hiçbir cihaz yeni access token alamaz
+        //   - tüm access oturumları                      => elde kalan JWT'ler bir sonraki istekte 401 alır
+        //   - bekleyen MFA token'ları                    => şifresi girilmiş ama MFA'sı tamamlanmamış girişler biter
+        public async Task<SignOutResult> SignOutEverywhereAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var session = await _sessionStore.GetAsync(sessionKey, cancellationToken);
-            await _sessionStore.RemoveAsync(sessionKey, cancellationToken);
+            // Sıra önemli: önce yeni token ÜRETEBİLEN şeyler (refresh token, MFA token) iptal edilir; aksi halde
+            // oturumlar silinirken araya giren bir yenileme / MFA doğrulaması yeni bir oturum açabilirdi.
+            var refreshTokenFamilies = await _refreshTokenStore.RevokeUserFamiliesAsync(userId, cancellationToken);
+            var mfaTokens = await _mfaChallengeStore.RemoveUserChallengesAsync(userId, cancellationToken);
+            var sessions = await _sessionStore.RemoveUserSessionsAsync(userId, cancellationToken);
 
-            if (session?.RefreshTokenFamilyId is not null)
-                await _refreshTokenStore.RevokeAsync(session.RefreshTokenFamilyId, cancellationToken);
-        }
-
-        // Tüm cihazlardan çıkış: kullanıcının tüm oturumları ve refresh token aileleri. Kapatılan oturum sayısını döndürür.
-        public async Task<int> SignOutEverywhereAsync(Guid userId, CancellationToken cancellationToken = default)
-        {
-            // Önce refresh token'lar: aksi halde arada yapılan bir yenileme yeni oturum açabilirdi.
-            await _refreshTokenStore.RevokeUserFamiliesAsync(userId, cancellationToken);
-            return await _sessionStore.RemoveUserSessionsAsync(userId, cancellationToken);
+            return new SignOutResult(sessions, refreshTokenFamilies, mfaTokens);
         }
 
         private async Task<(AccessToken AccessToken, string SessionKey)> CreateSessionAsync(
-            Guid userId, string email, string? refreshTokenFamilyId, DateTime refreshExpiresAt, CancellationToken cancellationToken)
+            Guid userId, string email, DateTime refreshExpiresAt, CancellationToken cancellationToken)
         {
             // Kullanıcının yetkileri Redis'teki oturuma yazılır; AuthorizationBehavior her istekte DB'ye gitmeden bunları kontrol eder.
             var operationClaims = await _userRepository.GetOperationClaimNamesAsync(userId, cancellationToken);
@@ -121,7 +118,6 @@ namespace ECommerce.Application.Features.Auth.Services
                 UserId = userId,
                 Email = email,
                 OperationClaims = operationClaims,
-                RefreshTokenFamilyId = refreshTokenFamilyId,
                 CreatedAt = now,
                 ExpiresAt = expiration
             }, cancellationToken);
@@ -135,4 +131,7 @@ namespace ECommerce.Application.Features.Auth.Services
 
     // RefreshToken istemciye yanıt gövdesinde değil HttpOnly cookie ile verilir (bkz. WebAPI => AuthController).
     public sealed record AuthTokens(AccessToken AccessToken, string RefreshToken, DateTime RefreshTokenExpiration);
+
+    // Çıkışta iptal edilenlerin sayısı.
+    public sealed record SignOutResult(int RevokedSessions, int RevokedRefreshTokens, int RevokedMfaTokens);
 }

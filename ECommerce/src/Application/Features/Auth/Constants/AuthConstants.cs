@@ -23,6 +23,7 @@ namespace ECommerce.Application.Features.Auth.Constants
         // ---------- Refresh token ----------
         public const string RefreshTokenInvalid = "Refresh token is invalid or expired. Please log in again.";
         // Tek kullanımlık token ikinci kez geldi: güvenlik için bu girişin tüm token'ları iptal edildi.
-        public const string RefreshTokenReused = "Refresh token has already been used. All tokens of this sign-in were revoked. Please log in again.";
+        public const string LogoutIdentityRequired = "A valid access token or refresh token is required to log out.";
+        public const string RefreshTokenReused ="Refresh token has already been used. All tokens of this sign-in were revoked. Please log in again.";
     }
 }

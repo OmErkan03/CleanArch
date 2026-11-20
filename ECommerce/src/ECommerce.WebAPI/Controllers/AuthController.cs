@@ -1,6 +1,5 @@
 using ECommerce.Application.Features.Auth.Commands.Login;
 using ECommerce.Application.Features.Auth.Commands.Logout;
-using ECommerce.Application.Features.Auth.Commands.LogoutAll;
 using ECommerce.Application.Features.Auth.Commands.MfaSetup;
 using ECommerce.Application.Features.Auth.Commands.MfaSetupConfirm;
 using ECommerce.Application.Features.Auth.Commands.MfaVerify;
@@ -88,24 +87,19 @@ namespace ECommerce.WebAPI.Controllers
             }
         }
 
-        // Bu cihazdaki oturumu ve refresh token'ı kapatır; aynı access token bir sonraki istekte 401 alır.
+        // TÜM cihazlardan çıkış: kullanıcının tüm access oturumları, refresh token'ları ve bekleyen MFA token'ları
+        // Redis'ten silinir; iptal edilenlerin sayısı döner.
+        // Kullanıcı geçerli access token (Authorization başlığı) YA DA refresh token cookie'si ile tanınır;
+        // böylece access token'ı süresi dolmuş kullanıcı da çıkış yapabilir.
+        // Cookie her durumda (başarısız olsa bile) istemciden silinir.
         [HttpPost("logout")]
         public async Task<IActionResult> Logout(CancellationToken cancellationToken)
         {
-            await sender.Send(new LogoutCommand(), cancellationToken);
             RefreshTokenCookie.Delete(Response);
 
-            return NoContent();
-        }
+            var result = await sender.Send(new LogoutCommand { RefreshToken = RefreshTokenCookie.Read(Request) }, cancellationToken);
 
-        // Tüm cihazlardaki oturumları ve refresh token'ları kapatır; kapatılan oturum sayısını döner.
-        [HttpPost("logout-all")]
-        public async Task<IActionResult> LogoutAll(CancellationToken cancellationToken)
-        {
-            var count = await sender.Send(new LogoutAllCommand(), cancellationToken);
-            RefreshTokenCookie.Delete(Response);
-
-            return Ok(new { revokedSessions = count });
+            return Ok(result);
         }
 
         // Giriş tamamlandıysa refresh token cookie'ye yazılır (gövdeye JsonIgnore ile hiç girmez).
