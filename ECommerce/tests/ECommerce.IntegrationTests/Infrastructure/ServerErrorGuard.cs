@@ -23,11 +23,7 @@ public sealed class ServerErrorGuard : DelegatingHandler
             hasDetail.ShouldBeFalse($"500 on {request.Method} {request.RequestUri} carries a detail: {body}");
         }
 
-        // İçerik okundu; testin de okuyabilmesi için yeniden konur.
-        var copy = new StringContent(body);
-        foreach (var header in response.Content.Headers)
-            copy.Headers.TryAddWithoutValidation(header.Key, header.Value);
-        response.Content = copy;
+        // ReadAsStringAsync içeriği tamponlar: test aynı içeriği (ve özgün başlıklarını) yeniden okuyabilir.
         return response;
     }
 }
