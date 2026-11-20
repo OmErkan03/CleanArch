@@ -103,15 +103,53 @@ public class ProductsDataRulesTests(ApiFactory factory)
         (await admin.GetOkAsync(free)).Amount.ShouldBe(99.99m);
     }
 
-    // Malformed input is a client error, not a server error.
-    [Theory]
-    [InlineData("{ not json")]
-    [InlineData("{\"name\":\"x\",\"amount\":\"abc\",\"currency\":\"TRY\",\"stock\":1}")]
-    [InlineData("{\"name\":\"x\",\"amount\":1,\"currency\":\"TRY\",\"stock\":1.5}")]
-    public async Task Create_MalformedJson_Returns400(string json)
+    // Valid side of the boundaries on update too: zero amount (BR-19) and zero stock (BR-21).
+    [Fact]
+    public async Task Update_AtValidBoundaries_Returns204_AndPersistsExactly()
     {
         using var admin = await _users.CreateAdminAsync();
+        var id = await admin.CreateOkAsync(ProductApi.NewProduct(amount: 5m, stock: 5));
+        var name = ProductApi.UniqueName();
+
+        (await admin.UpdateAsync(id, new { name, amount = 0.00m, currency = "EUR", stock = 0 })).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await admin.GetOkAsync(id)).ShouldBe(new ProductDto(id, name, 0m, "EUR", 0));
+    }
+
+    // Malformed input is a client error, not a server error, and nothing is stored or changed.
+    // {name} is replaced by a unique name so "nothing stored" can be checked by name.
+    public static TheoryData<string> MalformedJson() => new(
+        "{ not json",
+        "{\"name\":\"{name}\",\"amount\":\"abc\",\"currency\":\"TRY\",\"stock\":1}",
+        "{\"name\":\"{name}\",\"amount\":1,\"currency\":\"TRY\",\"stock\":1.5}");
+
+    [Theory]
+    [MemberData(nameof(MalformedJson))]
+    public async Task Create_MalformedJson_Returns400_AndStoresNothing(string template)
+    {
+        using var admin = await _users.CreateAdminAsync();
+        var name = ProductApi.UniqueName();
+        var json = template.Replace("{name}", name);
+
         var response = await admin.PostAsync(ProductApi.Route, new StringContent(json, Encoding.UTF8, "application/json"));
+
         await response.ShouldBeProblemAsync(HttpStatusCode.BadRequest);
+        var list = await (await admin.ListAsync()).Content.ReadFromJsonAsync<List<ProductDto>>();
+        list!.ShouldNotContain(p => p.Name == name);
+    }
+
+    [Theory]
+    [MemberData(nameof(MalformedJson))]
+    public async Task Update_MalformedJson_Returns400_AndChangesNothing(string template)
+    {
+        using var admin = await _users.CreateAdminAsync();
+        var id = await admin.CreateOkAsync();
+        var before = await admin.GetOkAsync(id);
+        var json = template.Replace("{name}", ProductApi.UniqueName());
+
+        var response = await admin.PutAsync($"{ProductApi.Route}/{id}", new StringContent(json, Encoding.UTF8, "application/json"));
+
+        await response.ShouldBeProblemAsync(HttpStatusCode.BadRequest);
+        (await admin.GetOkAsync(id)).ShouldBe(before);
     }
 }
