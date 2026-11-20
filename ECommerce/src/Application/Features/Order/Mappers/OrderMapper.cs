@@ -13,6 +13,7 @@ namespace ECommerce.Application.Features.Order.Mappers
         public static OrderResponse ToResponse(this Domain.Entities.Order order)
             => new(
                 order.Id,
+                order.UserId,
                 order.OrderDate,
                 order.TotalPrice.Amount,
                 order.TotalPrice.Currency,
@@ -22,8 +23,10 @@ namespace ECommerce.Application.Features.Order.Mappers
             => orders.Select(o => o.ToResponse()).ToList();
 
         // Sipariş boş oluşturulur; kalemler OrderItem endpoint'i ile eklenir ve toplam tutar otomatik hesaplanır.
-        public static Domain.Entities.Order MapCreateCommandToOrder(CreateOrderCommand command) => new()
+        public static Domain.Entities.Order MapCreateCommandToOrder(CreateOrderCommand command, Guid userId) => new()
         {
+            // Siparişin sahibi istemciden alınmaz, oturumdaki kullanıcıdır.
+            UserId = userId,
             // Sipariş tarihi istemciden alınmaz, sunucu belirler.
             // PostgreSQL (timestamptz) UTC zaman bekler.
             OrderDate = DateTime.UtcNow,
