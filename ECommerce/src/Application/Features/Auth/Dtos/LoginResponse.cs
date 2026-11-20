@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ECommerce.Application.Features.Auth.Services;
 using Uludag.Core.Security.JWT;
 
 namespace ECommerce.Application.Features.Auth.Dtos
@@ -30,7 +31,21 @@ namespace ECommerce.Application.Features.Auth.Dtos
 
         public string? Message { get; init; }
 
-        public static LoginResponse Succeeded(AccessToken accessToken) =>
-            new() { Status = LoginStatus.Succeeded, AccessToken = accessToken };
+        // Refresh token yanıt GÖVDESİNE yazılmaz (JsonIgnore): WebAPI bunu HttpOnly cookie olarak gönderir,
+        // böylece tarayıcıdaki JavaScript (ve olası bir XSS) onu okuyamaz.
+        [JsonIgnore]
+        public string? RefreshToken { get; init; }
+
+        [JsonIgnore]
+        public DateTime? RefreshTokenExpiration { get; init; }
+
+        public static LoginResponse Succeeded(AuthTokens tokens) =>
+            new()
+            {
+                Status = LoginStatus.Succeeded,
+                AccessToken = tokens.AccessToken,
+                RefreshToken = tokens.RefreshToken,
+                RefreshTokenExpiration = tokens.RefreshTokenExpiration
+            };
     }
 }

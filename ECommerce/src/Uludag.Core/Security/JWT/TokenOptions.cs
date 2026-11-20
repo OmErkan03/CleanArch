@@ -17,5 +17,9 @@ namespace Uludag.Core.Security.JWT
         public string SecurityKey { get; set; } = string.Empty;
 
         public int AccessTokenExpirationMinutes { get; set; } = 60;
+
+        // Refresh token ailesinin MUTLAK ömrü: login anından itibaren sayılır, yenilemeler uzatmaz.
+        // Bu süre dolunca kullanıcı yeniden şifre + MFA ile giriş yapmalıdır.
+        public int RefreshTokenExpirationDays { get; set; } = 3;
     }
 }

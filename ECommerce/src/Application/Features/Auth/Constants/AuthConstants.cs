@@ -19,5 +19,10 @@ namespace ECommerce.Application.Features.Auth.Constants
         public const string MfaSetupNotStarted = "MFA setup has not been started. Call /api/auth/mfa/setup first.";
         public const string MfaCodeInvalid = "The verification code is invalid.";
         public const string MfaTooManyAttempts = "Too many invalid codes. Please log in again.";
+
+        // ---------- Refresh token ----------
+        public const string RefreshTokenInvalid = "Refresh token is invalid or expired. Please log in again.";
+        // Tek kullanımlık token ikinci kez geldi: güvenlik için bu girişin tüm token'ları iptal edildi.
+        public const string RefreshTokenReused = "Refresh token has already been used. All tokens of this sign-in were revoked. Please log in again.";
     }
 }
