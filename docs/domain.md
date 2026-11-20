@@ -45,6 +45,11 @@ banned raw SQL.
 - **BR-17:** Logout revokes the current session; logout-all revokes every session, refresh token and pending MFA token of the user.
 - **BR-18:** Every API request is rate limited by a leaky bucket per user (else per IP): capacity 10, one request leaks every 12 s; over the limit → 429.
 - **BR-19:** Money amounts are never negative.
+- **BR-20:** A product name is required (not empty or whitespace) and at most 100 characters (spec 0002).
+- **BR-21:** A product's stock is never negative (spec 0002).
+- **BR-22:** A product's currency is a 3-letter code (spec 0002).
+- **BR-23:** A product amount has at most 2 decimal places (spec 0002).
+- A violation of BR-9 or BR-19…BR-23 is a client error: 400 with a ProblemDetails body, and nothing is stored.
 
 ## Key domain invariants
 

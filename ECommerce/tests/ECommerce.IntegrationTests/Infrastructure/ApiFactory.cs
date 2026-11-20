@@ -47,8 +47,32 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("MfaOptions:Issuer", "integration-tests");
         builder.UseSetting("MfaOptions:SecretEncryptionKey", Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
 
-        builder.UseSetting("LeakyBucketOptions:Capacity", "10");
-        builder.UseSetting("LeakyBucketOptions:LeakIntervalSeconds", "12");
+        // Rate limit bu testlerin konusu değil (spec 0002, clarify 4): tüm istekler tek IP'den
+        // ("ip:unknown") geldiği için kapasite yükseltilir. Yalnızca test konfigürasyonu; kod değişmez.
+        builder.UseSetting("LeakyBucketOptions:Capacity", "100000");
+        builder.UseSetting("LeakyBucketOptions:LeakIntervalSeconds", "1");
+    }
+
+    // Test istemcisi: her yanıt ServerErrorGuard'dan geçer (500'de istisna detayı sızmamalı, AC-10).
+    public HttpClient CreateGuardedClient() => CreateDefaultClient(new ServerErrorGuard());
+
+    // YALNIZCA arrange: sistemde seed edilmiş admin yok ve claim API'si Admin ister. İlk admin'i
+    // uygulamanın kendi DbContext'iyle oluşturur; diğer tüm claim'ler gerçek API ile verilir.
+    public async Task GrantClaimDirectlyAsync(Guid userId, string claimName)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<UludagDbContext>();
+        var user = await db.Users.Include(u => u.OperationClaims).SingleAsync(u => u.Id == userId);
+        var claim = await db.OperationClaims.SingleAsync(c => c.Name == claimName);
+        user.OperationClaims.Add(claim);
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<int> ClaimIdAsync(string claimName)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<UludagDbContext>();
+        return (await db.OperationClaims.AsNoTracking().SingleAsync(c => c.Name == claimName)).Id;
     }
 
     public override async ValueTask DisposeAsync()
