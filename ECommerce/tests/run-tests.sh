@@ -25,9 +25,13 @@ printf '%s\n' "$out"
 esc=$(printf '\033')
 plain=$(printf '%s\n' "$out" | sed "s/${esc}\[[0-9;]*[A-Za-z]//g")
 
-# The run summary's "total: <n>" is summed over every test project of the step.
-total=$(printf '%s\n' "$plain" | sed -n '/Test run summary/,$ s/^ *total: *\([0-9][0-9]*\).*/\1/p' | tail -n 1)
-total=${total:-0}
+# Executed = succeeded + failed from the run summary (summed over every test project of the step).
+# Not "total:", which also counts skipped tests: a step whose tests are all skipped executed none.
+summary_count() {
+  printf '%s\n' "$plain" | sed -n "/Test run summary/,\$ s/^ *$1: *\([0-9][0-9]*\).*/\1/p" | tail -n 1
+}
+succeeded=$(summary_count succeeded); failed=$(summary_count failed)
+total=$(( ${succeeded:-0} + ${failed:-0} ))
 
 if [ "$rc" -ne 0 ]; then
   echo "run-tests: dotnet test failed (exit $rc) for $1 $2" >&2
